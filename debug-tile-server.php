@@ -14,8 +14,10 @@ if (preg_match("{/(\d+)/(\d+)/(\d+)\.png$}", $_SERVER['REQUEST_URI'], $matches))
 	syslog(LOG_INFO, "requested tile z = $z, x = $x, y = $y");
 
 	$image = imagecreatetruecolor(256, 256);
+	$frame_color = imagecolorallocate($image, 128, 128, 128);
 	$text_color = imagecolorallocate($image, 0, 255, 0);
-	imagestring($image, 5, 0, 0, "$z / $x / $y", $text_color);
+	imagerectangle($image, 0, 0, 255, 255, $frame_color);
+	imagestring($image, 5, 16, 16, "$z / $x / $y", $text_color);
 	header("Content-Type: image/png");
 	imagepng($image);
 } else {
