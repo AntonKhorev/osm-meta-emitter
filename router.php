@@ -5,6 +5,11 @@
 // use this to serve for development purposes:
 // php -S localhost:8000 router.php
 
+$config = [
+	// "osm_api_url" => "https://api.openstreetmap.org/",
+	"osm_api_url" => "http://127.0.0.1:3000/",
+];
+
 if (php_sapi_name() == 'cli-server') {
 	$root = "/";
 } else {
@@ -35,6 +40,23 @@ if ($request == "testimage") {
 	$image = imagecreatefromstring($image_data);
 	header("Content-Type: image/png");
 	imagepng($image);
+} elseif (preg_match("{^nodes?/(\d+)/?}", $request, $match)) {
+	header("Content-Type: text/plain");
+	$id = $match[1];
+	echo "requested node #$id\n";
+	$node_url = "$config[osm_api_url]api/0.6/node/$id.json";
+
+	$ch = curl_init(); 
+	curl_setopt($ch, CURLOPT_URL, $node_url);
+	curl_setopt($ch, CURLOPT_USERAGENT, "osm-og-image curl/" . curl_version()["version"]);
+	curl_setopt($ch, CURLOPT_HEADER, false);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	$element_response_string = curl_exec($ch);
+	curl_close($ch);
+
+	$element_response = json_decode($element_response_string);
+	$node = $element_response->elements[0];
+	print_r($node);
 } else {
 	echo "<div>Root: " . htmlspecialchars($root) . "</div>\n";
 	echo "<div>Request: " . htmlspecialchars($request) . "</div>\n";
