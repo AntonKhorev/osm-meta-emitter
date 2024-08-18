@@ -8,6 +8,7 @@
 $config = [
 	// "osm_api_url" => "https://api.openstreetmap.org/",
 	"osm_api_url" => "http://127.0.0.1:3000/",
+	"element_pages" => true,
 ];
 
 if (php_sapi_name() == 'cli-server') {
@@ -40,7 +41,7 @@ if ($request == "testimage") {
 	$image = imagecreatefromstring($image_data);
 	header("Content-Type: image/png");
 	imagepng($image);
-} elseif (preg_match("{^nodes?/(\d+)/?}", $request, $match)) {
+} elseif ($config['element_pages'] && preg_match("{^nodes?/(\d+)/?}", $request, $match)) {
 	header("Content-Type: text/plain");
 	$id = $match[1];
 	echo "requested node #$id\n";
@@ -58,6 +59,7 @@ if ($request == "testimage") {
 	$node = $element_response->elements[0];
 	print_r($node);
 } else {
-	echo "<div>Root: " . htmlspecialchars($root) . "</div>\n";
-	echo "<div>Request: " . htmlspecialchars($request) . "</div>\n";
+	header("HTTP/1.1 404 Not Found");
+	header("Content-Type: text/plain");
+	echo "not found\n";
 }
