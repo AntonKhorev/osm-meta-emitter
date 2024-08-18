@@ -37,14 +37,7 @@ if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	$x = floor(calculate_normalized_x($node->lon) * (1 << $z));
 	$y = floor(calculate_normalized_y($node->lat) * (1 << $z));
 	$image_url = "$config[osm_tile_url]$z/$x/$y.png";
-
-	$ch = curl_init(); 
-	curl_setopt($ch, CURLOPT_URL, $image_url);
-	curl_setopt($ch, CURLOPT_USERAGENT, "osm-og-image curl/" . curl_version()["version"]);
-	curl_setopt($ch, CURLOPT_HEADER, false);
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	$image_data = curl_exec($ch);
-	curl_close($ch);
+	$image_data = fetch($image_url);
 
 	// $image = imagecreatetruecolor(256, 256);
 	$image = imagecreatefromstring($image_data);
@@ -66,15 +59,7 @@ function fetch_element(string $type, int $id): object {
 	global $config;
 
 	$url = "$config[osm_api_url]api/0.6/$type/$id.json";
-
-	$ch = curl_init(); 
-	curl_setopt($ch, CURLOPT_URL, $url);
-	curl_setopt($ch, CURLOPT_USERAGENT, "osm-og-image curl/" . curl_version()["version"]);
-	curl_setopt($ch, CURLOPT_HEADER, false);
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	$response_string = curl_exec($ch);
-	curl_close($ch);
-
+	$response_string = fetch($url);
 	$response = json_decode($response_string);
 	return $response->elements[0];
 }
@@ -89,4 +74,15 @@ function calculate_normalized_y(float $lat): float {
 	$lat = min($lat, +$max_lat);
 	$lat_radians = $lat * M_PI / 180;
 	return (1 - log(tan($lat_radians) + 1 / cos($lat_radians)) / M_PI) / 2;
+}
+
+function fetch(string $url): string {
+	$ch = curl_init(); 
+	curl_setopt($ch, CURLOPT_URL, $url);
+	curl_setopt($ch, CURLOPT_USERAGENT, "osm-og-image curl/" . curl_version()["version"]);
+	curl_setopt($ch, CURLOPT_HEADER, false);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	$response_string = curl_exec($ch);
+	curl_close($ch);
+	return $response_string;
 }
