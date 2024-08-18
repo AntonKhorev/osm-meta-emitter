@@ -11,7 +11,7 @@ $config = [
 	// "osm_tile_url" => "https://tile.openstreetmap.org/",
 	"osm_tile_url" => "http://127.0.0.1:8001/",
 	"element_pages" => true,
-	"image_crosshair" => true,
+	"image_crosshair" => false,
 ];
 
 if (php_sapi_name() == 'cli-server') {
@@ -88,6 +88,14 @@ if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 		imageline($image, 0, $tile_size / 2, $tile_size - 1, $tile_size / 2, $crosshair_color);
 		imageline($image, 0, $tile_size / 2 + 1, $tile_size - 1, $tile_size / 2 + 1, $crosshair_color);
 	}
+
+	$marker_image = imagecreatefrompng("node_marker.png");
+	imagecopy(
+		$image, $marker_image,
+		$tile_size / 2 - imagesx($marker_image) / 2 + 1, $tile_size / 2 - imagesy($marker_image) / 2 + 1,
+		0, 0,
+		imagesx($marker_image), imagesy($marker_image)
+	);
 
 	header("Content-Type: image/png");
 	imagepng($image);
