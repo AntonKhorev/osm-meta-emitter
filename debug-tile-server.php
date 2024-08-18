@@ -5,14 +5,23 @@
 // use this to serve for development purposes:
 // php -S localhost:8001 debug-tile-server.php
 
+openlog("osm-og-image debug-tile-server", LOG_PERROR, LOG_USER);
+
 if (preg_match("{/(\d+)/(\d+)/(\d+)\.png$}", $_SERVER['REQUEST_URI'], $matches)) {
-	header("Content-Type: text/plain");
 	$z = $matches[1];
 	$x = $matches[2];
 	$y = $matches[3];
-	echo "requested tile z = $z, x = $x, y = $y";
+	syslog(LOG_INFO, "requested tile z = $z, x = $x, y = $y");
+
+	$image = imagecreatetruecolor(256, 256);
+	header("Content-Type: image/png");
+	imagepng($image);
 } else {
+	syslog(LOG_INFO, "requested unrecognized path");
+
 	header("HTTP/1.1 404 Not Found");
 	header("Content-Type: text/plain");
 	echo "not found";
 }
+
+syslog(LOG_INFO, print_r($_SERVER, true));
