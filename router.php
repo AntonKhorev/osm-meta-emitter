@@ -8,10 +8,14 @@
 $config = [
 	// "osm_api_url" => "https://api.openstreetmap.org/",
 	"osm_api_url" => "http://127.0.0.1:3000/",
+	// "osm_web_url" => "https://www.openstreetmap.org/",
+	"osm_web_url" => "http://127.0.0.1:3000/",
 	// "osm_tile_url" => "https://tile.openstreetmap.org/",
 	"osm_tile_url" => "http://127.0.0.1:8001/",
 	"element_pages" => true,
 	"image_crosshair" => false,
+	"og:site_name" => "OpenStreetMap",
+	"og:description" => "OpenStreetMap is a map of the world, created by people like you and free to use under an open license.",
 ];
 
 if (php_sapi_name() == 'cli-server') {
@@ -101,14 +105,34 @@ if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	imagepng($image);
 } elseif ($config['element_pages'] && preg_match("{^nodes?/(\d+)/?$}", $request, $match)) {
 	$id = $match[1];
-	header("Content-Type: text/plain");
-	echo "requested node #$id\n";
-	$node = fetch_element("node", $id);
-	print_r($node);
+	$title = "Node: $id";
+	$osm_url = "$config[osm_web_url]node/$id";
+	$image_url = ($_SERVER['HTTPS'] ? "https" : "http") . "://$_SERVER[HTTP_HOST]${root}node/$id/image.png";
+
+	echo "<!DOCTYPE html>\n";
+	echo "<html lang=en>\n";
+	echo "<head>\n";
+	echo meta_tag("og:site_name", $config["og:site_name"]);
+	echo meta_tag("og:title", $title);
+	echo meta_tag("og:type", "website");
+	echo meta_tag("og:url", $osm_url);
+	echo meta_tag("og:description", $config["og:description"]);
+	echo meta_tag("og:image", $image_url);
+	echo meta_tag("og:image:alt", "Node location");
+	echo "</head>\n";
+	echo "<body>\n";
+	echo "<h1>" . htmlspecialchars($title) . "</h1>\n";
+	echo "<p>See on <a href='" . htmlspecialchars($osm_url) . "'>" . htmlspecialchars($config["og:site_name"]) . "</a></p>\n";
+	echo "</body>\n";
+	echo "</html>\n";
 } else {
 	header("HTTP/1.1 404 Not Found");
 	header("Content-Type: text/plain");
 	echo "not found\n";
+}
+
+function meta_tag(string $property, string $content): string {
+	return "<meta property='" . htmlspecialchars($property) . "' content='" . htmlspecialchars($content) . "'>\n";
 }
 
 function fetch_element(string $type, int $id): object {
