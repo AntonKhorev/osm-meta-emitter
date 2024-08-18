@@ -1,5 +1,8 @@
 <?php
 
+// use this to serve for development purposes:
+// php -S localhost:8000 router.php
+
 if (php_sapi_name() == 'cli-server') {
 	$root = "/";
 } else {
