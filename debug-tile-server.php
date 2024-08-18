@@ -25,7 +25,7 @@ if (preg_match("{/(\d+)/(\d+)/(\d+)\.png$}", $_SERVER['REQUEST_URI'], $matches))
 
 	header("HTTP/1.1 404 Not Found");
 	header("Content-Type: text/plain");
-	echo "not found";
+	echo "not found\n";
 }
 
 syslog(LOG_INFO, print_r($_SERVER, true));
