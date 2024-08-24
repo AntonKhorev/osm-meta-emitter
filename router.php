@@ -5,18 +5,9 @@
 // use this to serve for development purposes:
 // php -S localhost:8000 router.php
 
-$config = [
-	// "osm_api_url" => "https://api.openstreetmap.org/",
-	"osm_api_url" => "http://127.0.0.1:3000/",
-	// "osm_web_url" => "https://www.openstreetmap.org/",
-	"osm_web_url" => "http://127.0.0.1:3000/",
-	// "osm_tile_url" => "https://tile.openstreetmap.org/",
-	"osm_tile_url" => "http://127.0.0.1:8001/",
-	"element_pages" => true,
-	"image_crosshair" => false,
-	"og:site_name" => "OpenStreetMap",
-	"og:description" => "OpenStreetMap is a map of the world, created by people like you and free to use under an open license.",
-];
+$settings = [];
+read_settings_file("settings.ini");
+read_settings_file("settings.local.ini");
 
 if (php_sapi_name() == 'cli-server') {
 	$root = "/";
@@ -85,7 +76,7 @@ if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 		imagecopy($image, $tile_image_11, $x1, $y1, 0, 0, $x0, $y0);
 	}
 	
-	if ($config["image_crosshair"]) {
+	if ($settings["image_crosshair"]) {
 		$crosshair_color = imagecolorallocatealpha($image, 128, 128, 128, 64);
 		imageline($image, $tile_size / 2, 0, $tile_size / 2, $tile_size - 1, $crosshair_color);
 		imageline($image, $tile_size / 2 + 1, 0, $tile_size / 2 + 1, $tile_size - 1, $crosshair_color);
@@ -103,26 +94,26 @@ if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 
 	header("Content-Type: image/png");
 	imagepng($image);
-} elseif ($config['element_pages'] && preg_match("{^nodes?/(\d+)/?$}", $request, $match)) {
+} elseif ($settings['element_pages'] && preg_match("{^nodes?/(\d+)/?$}", $request, $match)) {
 	$id = $match[1];
 	$title = "Node: $id";
-	$osm_url = "$config[osm_web_url]node/$id";
+	$osm_url = "$settings[osm_web_url]node/$id";
 	$image_url = ($_SERVER['HTTPS'] ? "https" : "http") . "://$_SERVER[HTTP_HOST]${root}node/$id/image.png";
 
 	echo "<!DOCTYPE html>\n";
 	echo "<html lang=en>\n";
 	echo "<head>\n";
-	echo meta_tag("og:site_name", $config["og:site_name"]);
+	echo meta_tag("og:site_name", $settings["og:site_name"]);
 	echo meta_tag("og:title", $title);
 	echo meta_tag("og:type", "website");
 	echo meta_tag("og:url", $osm_url);
-	echo meta_tag("og:description", $config["og:description"]);
+	echo meta_tag("og:description", $settings["og:description"]);
 	echo meta_tag("og:image", $image_url);
 	echo meta_tag("og:image:alt", "Node location");
 	echo "</head>\n";
 	echo "<body>\n";
 	echo "<h1>" . htmlspecialchars($title) . "</h1>\n";
-	echo "<p>See on <a href='" . htmlspecialchars($osm_url) . "'>" . htmlspecialchars($config["og:site_name"]) . "</a></p>\n";
+	echo "<p>See on <a href='" . htmlspecialchars($osm_url) . "'>" . htmlspecialchars($settings["og:site_name"]) . "</a></p>\n";
 	echo "</body>\n";
 	echo "</html>\n";
 } else {
@@ -131,23 +122,32 @@ if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	echo "not found\n";
 }
 
+function read_settings_file(string $filename): void {
+	global $settings;
+
+	$new_settings = @parse_ini_file($filename);
+	if ($new_settings) {
+		$settings = array_merge($settings, $new_settings);
+	}
+}
+
 function meta_tag(string $property, string $content): string {
 	return "<meta property='" . htmlspecialchars($property) . "' content='" . htmlspecialchars($content) . "'>\n";
 }
 
 function fetch_element(string $type, int $id): object {
-	global $config;
+	global $settings;
 
-	$url = "$config[osm_api_url]api/0.6/$type/$id.json";
+	$url = "$settings[osm_api_url]api/0.6/$type/$id.json";
 	$response_string = fetch($url);
 	$response = json_decode($response_string);
 	return $response->elements[0];
 }
 
 function fetch_tile_image(int $z, int $x, int $y): GdImage {
-	global $config;
+	global $settings;
 
-	$url = "$config[osm_tile_url]$z/$x/$y.png";
+	$url = "$settings[osm_tile_url]$z/$x/$y.png";
 	$data = fetch($url);
 	return imagecreatefromstring($data);
 }
