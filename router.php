@@ -26,6 +26,38 @@ if (substr($_SERVER['REQUEST_URI'], 0, strlen($root)) == $root) {
 if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	$id = $match[1];
 	$node = fetch_element("node", $id);
+	if ($node === null) {
+		respond_with_dummy_image();
+	} else {
+		respond_with_node_image($node);
+	}
+} elseif ($settings["element_pages"] && preg_match("{^nodes?/(\d+)/?$}", $request, $match)) {
+	$id = $match[1];
+	respond_with_node_page($id);
+} else {
+	header("HTTP/1.1 404 Not Found");
+	header("Content-Type: text/plain");
+	echo "not found\n";
+}
+
+function read_settings_file(string $filename): void {
+	global $settings;
+
+	$new_settings = @parse_ini_file($filename);
+	if ($new_settings) {
+		$settings = array_merge($settings, $new_settings);
+	}
+}
+
+function respond_with_dummy_image(): void {
+	global $settings;
+
+	header("Content-Type: image/png");
+	readfile($settings["dummy_image_file"]);
+}
+
+function respond_with_node_image(object $node): void {
+	global $settings;
 
 	$tile_pow = 8;
 	$tile_size = 1 << $tile_pow;
@@ -94,11 +126,14 @@ if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 
 	header("Content-Type: image/png");
 	imagepng($image);
-} elseif ($settings['element_pages'] && preg_match("{^nodes?/(\d+)/?$}", $request, $match)) {
-	$id = $match[1];
+}
+
+function respond_with_node_page(int $id): void {
+	global $settings, $root;
+
 	$title = "Node: $id";
 	$osm_url = "$settings[osm_web_url]node/$id";
-	$image_url = ($_SERVER['HTTPS'] ? "https" : "http") . "://$_SERVER[HTTP_HOST]${root}node/$id/image.png";
+	$image_url = (@$_SERVER['HTTPS'] ? "https" : "http") . "://$_SERVER[HTTP_HOST]${root}node/$id/image.png";
 
 	echo "<!DOCTYPE html>\n";
 	echo "<html lang=en>\n";
@@ -116,30 +151,18 @@ if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	echo "<p>See on <a href='" . htmlspecialchars($osm_url) . "'>" . htmlspecialchars($settings["og:site_name"]) . "</a></p>\n";
 	echo "</body>\n";
 	echo "</html>\n";
-} else {
-	header("HTTP/1.1 404 Not Found");
-	header("Content-Type: text/plain");
-	echo "not found\n";
-}
-
-function read_settings_file(string $filename): void {
-	global $settings;
-
-	$new_settings = @parse_ini_file($filename);
-	if ($new_settings) {
-		$settings = array_merge($settings, $new_settings);
-	}
 }
 
 function meta_tag(string $property, string $content): string {
 	return "<meta property='" . htmlspecialchars($property) . "' content='" . htmlspecialchars($content) . "'>\n";
 }
 
-function fetch_element(string $type, int $id): object {
+function fetch_element(string $type, int $id): object | null {
 	global $settings;
 
 	$url = "$settings[osm_api_url]api/0.6/$type/$id.json";
 	$response_string = fetch($url);
+	if ($response_string === null) return null;
 	$response = json_decode($response_string);
 	return $response->elements[0];
 }
@@ -152,7 +175,7 @@ function fetch_tile_image(int $z, int $x, int $y): GdImage {
 	return imagecreatefromstring($data);
 }
 
-function fetch(string $url): string {
+function fetch(string $url): string | null {
 	$ch = curl_init(); 
 	curl_setopt($ch, CURLOPT_URL, $url);
 	curl_setopt($ch, CURLOPT_USERAGENT, "osm-og-image curl/" . curl_version()["version"]);
@@ -160,6 +183,7 @@ function fetch(string $url): string {
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 	$response_string = curl_exec($ch);
 	curl_close($ch);
+	if (curl_getinfo($ch, CURLINFO_RESPONSE_CODE) != 200) return null;
 	return $response_string;
 }
 
