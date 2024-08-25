@@ -31,11 +31,12 @@ spl_autoload_register(function ($class_name) {
 
 if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	$id = $match[1];
-	$node = fetch_element("node", $id);
+	$client = new OsmOgImage\HttpClient($settings["osm_api_url"], $settings["osm_tile_url"]);
+	$node = $client->fetch_node($id);
 	if ($node === null) {
 		respond_with_dummy_image();
 	} else {
-		respond_with_node_image($node);
+		respond_with_node_image($client, $node);
 	}
 } elseif ($settings["element_pages"] && preg_match("{^nodes?/(\d+)/?$}", $request, $match)) {
 	$id = $match[1];
@@ -62,7 +63,7 @@ function respond_with_dummy_image(): void {
 	readfile($settings["dummy_image_file"]);
 }
 
-function respond_with_node_image(OsmOgImage\OsmNode $node): void {
+function respond_with_node_image(OsmOgImage\HttpClient $client, OsmOgImage\OsmNode $node): void {
 	global $settings;
 
 	$tile_pow = 8;
@@ -86,15 +87,15 @@ function respond_with_node_image(OsmOgImage\OsmNode $node): void {
 	$tile_y = $world_tile_corner_y >> $tile_pow;
 	
 	// TODO skip tiles outsize the world
-	$tile_image_00 = fetch_tile_image($zoom, $tile_x, $tile_y);
+	$tile_image_00 = $client->fetch_tile_image($zoom, $tile_x, $tile_y);
 	if ($fetch_extra_tile_x) {
-		$tile_image_10 = fetch_tile_image($zoom, $tile_x + 1, $tile_y);
+		$tile_image_10 = $client->fetch_tile_image($zoom, $tile_x + 1, $tile_y);
 	}
 	if ($fetch_extra_tile_y) {
-		$tile_image_01 = fetch_tile_image($zoom, $tile_x, $tile_y + 1);
+		$tile_image_01 = $client->fetch_tile_image($zoom, $tile_x, $tile_y + 1);
 	}
 	if ($fetch_extra_tile_x && $fetch_extra_tile_y) {
-		$tile_image_11 = fetch_tile_image($zoom, $tile_x + 1, $tile_y + 1);
+		$tile_image_11 = $client->fetch_tile_image($zoom, $tile_x + 1, $tile_y + 1);
 	}
 
 	$image = imagecreatetruecolor($tile_size, $tile_size);
@@ -162,36 +163,6 @@ function respond_with_node_page(int $id): void {
 
 function meta_tag(string $property, string $content): string {
 	return "<meta property='" . htmlspecialchars($property) . "' content='" . htmlspecialchars($content) . "'>\n";
-}
-
-function fetch_element(string $type, int $id): OsmOgImage\OsmElement | null {
-	global $settings;
-
-	$url = "$settings[osm_api_url]api/0.6/$type/$id.json";
-	$response_string = fetch($url);
-	if ($response_string === null) return null;
-	$response = json_decode($response_string);
-	return OsmOgImage\OsmNode::fromDecodedJson($response->elements[0]);
-}
-
-function fetch_tile_image(int $z, int $x, int $y): GdImage {
-	global $settings;
-
-	$url = "$settings[osm_tile_url]$z/$x/$y.png";
-	$data = fetch($url);
-	return imagecreatefromstring($data);
-}
-
-function fetch(string $url): string | null {
-	$ch = curl_init(); 
-	curl_setopt($ch, CURLOPT_URL, $url);
-	curl_setopt($ch, CURLOPT_USERAGENT, "osm-og-image curl/" . curl_version()["version"]);
-	curl_setopt($ch, CURLOPT_HEADER, false);
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	$response_string = curl_exec($ch);
-	curl_close($ch);
-	if (curl_getinfo($ch, CURLINFO_RESPONSE_CODE) != 200) return null;
-	return $response_string;
 }
 
 function calculate_normalized_x(float $lon): float {
