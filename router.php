@@ -140,7 +140,7 @@ function respond_with_node_image(OsmOgImage\HttpClient $client, OsmOgImage\OsmNo
 		imageline($image, 0, $tile_size / 2 + 1, $tile_size - 1, $tile_size / 2 + 1, $crosshair_color);
 	}
 
-	$marker_image = imagecreatefrompng("node_marker.png");
+	$marker_image = imagecreatefrompng("assets/node_marker.png");
 	imagecopy(
 		$image, $marker_image,
 		$tile_size / 2 - imagesx($marker_image) / 2 + 1, $tile_size / 2 - imagesy($marker_image) / 2 + 1,
