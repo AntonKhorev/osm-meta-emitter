@@ -1,7 +1,7 @@
 <?php namespace OsmOgImage;
 
 class OsmNode extends OsmElement {
-	function __construct(private LatLon $point) {}
+	function __construct(private NormalizedCoords $point) {}
 
 	public static function fromDecodedJson(int $id, object $data): static {
 		foreach ($data->elements as $element_data) {
@@ -10,11 +10,11 @@ class OsmNode extends OsmElement {
 			}
 		}
 		// TODO throw if not found
-		$point = new LatLon($node_data->lat, $node_data->lon);
+		$point = NormalizedCoords::fromObject($node_data);
 		return new static($point);
 	}
 
-	function getCenter(): LatLon {
+	function getCenter(): NormalizedCoords {
 		return $this->point;
 	}
 }

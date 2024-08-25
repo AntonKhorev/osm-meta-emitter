@@ -89,14 +89,12 @@ function respond_with_node_image(OsmOgImage\HttpClient $client, OsmOgImage\OsmNo
 	$tile_mask = $tile_size - 1;
 
 	$center = $node->getCenter();
-	$normalized_x = calculate_normalized_x($center->lon);
-	$normalized_y = calculate_normalized_y($center->lat);
 
 	$zoom = 16;
 	$world_pow = $zoom + $tile_pow;
 	$world_size = 1 << $world_pow;
-	$world_x = $normalized_x * $world_size;
-	$world_y = $normalized_y * $world_size;
+	$world_x = $center->x * $world_size;
+	$world_y = $center->y * $world_size;
 	$world_tile_corner_x = $world_x - $tile_size / 2;
 	$world_tile_corner_y = $world_y - $tile_size / 2;
 	$fetch_extra_tile_x = $world_tile_corner_x & $tile_mask;
@@ -152,16 +150,4 @@ function respond_with_node_image(OsmOgImage\HttpClient $client, OsmOgImage\OsmNo
 
 	header("Content-Type: image/png");
 	imagepng($image);
-}
-
-function calculate_normalized_x(float $lon): float {
-	return ($lon + 180) / 360;
-}
-
-function calculate_normalized_y(float $lat): float {
-	$max_lat=85.0511287798;
-	$lat = max($lat, -$max_lat);
-	$lat = min($lat, +$max_lat);
-	$lat_radians = $lat * M_PI / 180;
-	return (1 - log(tan($lat_radians) + 1 / cos($lat_radians)) / M_PI) / 2;
 }

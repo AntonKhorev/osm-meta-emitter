@@ -1,9 +1,9 @@
 <?php namespace OsmOgImage;
 
-class LatLonList implements \IteratorAggregate {
+class NormalizedCoordsList implements \IteratorAggregate {
 	private array $array;
 
-	function __construct(LatLon ...$array) {
+	function __construct(NormalizedCoords ...$array) {
 		$this->array = $array;
 	}
 
