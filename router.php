@@ -56,6 +56,9 @@ if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 } elseif ($settings["element_pages"] && preg_match("{^nodes?/(\d+)/?$}", $request, $match)) {
 	$id = $match[1];
 	$page->respond_with_node_page($id);
+} elseif ($settings["element_pages"] && preg_match("{^ways?/(\d+)/?$}", $request, $match)) {
+	$id = $match[1];
+	$page->respond_with_way_page($id);
 } else {
 	header("HTTP/1.1 404 Not Found");
 	header("Content-Type: text/plain");

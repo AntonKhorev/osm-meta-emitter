@@ -9,9 +9,16 @@ class WebPage {
 	) {}
 
 	function respond_with_node_page(int $id): void {
-		$title = "Node: $id";
-		$osm_url = $this->osm_web_url . "node/$id";
-		$image_url = $this->root_url . "node/$id/image.png";
+		$this->respond_with_element_page("node/$id", "Node: $id");
+	}
+
+	function respond_with_way_page(int $id): void {
+		$this->respond_with_element_page("way/$id", "Way: $id");
+	}
+
+	private function respond_with_element_page(string $path, string $title): void {
+		$osm_url = $this->osm_web_url . $path;
+		$image_url = $this->root_url . "$path/image.png";
 	
 		echo "<!DOCTYPE html>\n";
 		echo "<html lang=en>\n";
