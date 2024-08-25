@@ -30,6 +30,10 @@ spl_autoload_register(function ($class_name) {
 });
 
 $client = new OsmOgImage\HttpClient($settings["osm_api_url"], $settings["osm_tile_url"], $settings["log_http_requests"]);
+$page = new OsmOgImage\WebPage(
+	(@$_SERVER['HTTPS'] ? "https" : "http") . "://$_SERVER[HTTP_HOST]${root}",
+	$settings["osm_web_url"], $settings["site_name"], $settings["site_description"]
+);
 
 if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	$id = $match[1];
@@ -51,7 +55,7 @@ if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	}
 } elseif ($settings["element_pages"] && preg_match("{^nodes?/(\d+)/?$}", $request, $match)) {
 	$id = $match[1];
-	respond_with_node_page($id);
+	$page->respond_with_node_page($id);
 } else {
 	header("HTTP/1.1 404 Not Found");
 	header("Content-Type: text/plain");
@@ -71,7 +75,7 @@ function respond_with_dummy_image(): void {
 	global $settings;
 
 	header("Content-Type: image/png");
-	readfile($settings["dummy_image_file"]);
+	readfile($settings["site_logo"]);
 }
 
 function respond_with_node_image(OsmOgImage\HttpClient $client, OsmOgImage\OsmNode $node): void {
@@ -145,35 +149,6 @@ function respond_with_node_image(OsmOgImage\HttpClient $client, OsmOgImage\OsmNo
 
 	header("Content-Type: image/png");
 	imagepng($image);
-}
-
-function respond_with_node_page(int $id): void {
-	global $settings, $root;
-
-	$title = "Node: $id";
-	$osm_url = "$settings[osm_web_url]node/$id";
-	$image_url = (@$_SERVER['HTTPS'] ? "https" : "http") . "://$_SERVER[HTTP_HOST]${root}node/$id/image.png";
-
-	echo "<!DOCTYPE html>\n";
-	echo "<html lang=en>\n";
-	echo "<head>\n";
-	echo meta_tag("og:site_name", $settings["og:site_name"]);
-	echo meta_tag("og:title", $title);
-	echo meta_tag("og:type", "website");
-	echo meta_tag("og:url", $osm_url);
-	echo meta_tag("og:description", $settings["og:description"]);
-	echo meta_tag("og:image", $image_url);
-	echo meta_tag("og:image:alt", "Node location");
-	echo "</head>\n";
-	echo "<body>\n";
-	echo "<h1>" . htmlspecialchars($title) . "</h1>\n";
-	echo "<p>See on <a href='" . htmlspecialchars($osm_url) . "'>" . htmlspecialchars($settings["og:site_name"]) . "</a></p>\n";
-	echo "</body>\n";
-	echo "</html>\n";
-}
-
-function meta_tag(string $property, string $content): string {
-	return "<meta property='" . htmlspecialchars($property) . "' content='" . htmlspecialchars($content) . "'>\n";
 }
 
 function calculate_normalized_x(float $lon): float {
