@@ -9,10 +9,10 @@ $settings = [];
 read_settings_file("settings.ini");
 read_settings_file("settings.local.ini");
 
-if (php_sapi_name() == 'cli-server') {
+if (php_sapi_name() == "cli-server") {
 	$root = "/";
 } else {
-	if (preg_match('{(.*/)[^/]*\.php$}', $_SERVER['SCRIPT_NAME'], $matches)) {
+	if (preg_match("{(.*/)[^/]*\.php$}", $_SERVER["SCRIPT_NAME"], $matches)) {
 		$root = $matches[1];
 	} else {
 		$root = "/";
@@ -22,6 +22,12 @@ if (php_sapi_name() == 'cli-server') {
 if (substr($_SERVER['REQUEST_URI'], 0, strlen($root)) == $root) {
 	$request = substr($_SERVER['REQUEST_URI'], strlen($root));
 }
+
+spl_autoload_register(function ($class_name) {
+	$class_path = str_replace("\\", "/", $class_name);
+	$filename = __DIR__ . "/src/" . $class_path . ".php";
+	if (file_exists($filename)) require $filename;
+});
 
 if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	$id = $match[1];
@@ -56,15 +62,16 @@ function respond_with_dummy_image(): void {
 	readfile($settings["dummy_image_file"]);
 }
 
-function respond_with_node_image(object $node): void {
+function respond_with_node_image(OsmOgImage\OsmNode $node): void {
 	global $settings;
 
 	$tile_pow = 8;
 	$tile_size = 1 << $tile_pow;
 	$tile_mask = $tile_size - 1;
 
-	$normalized_x = calculate_normalized_x($node->lon);
-	$normalized_y = calculate_normalized_y($node->lat);
+	$center = $node->getCenter();
+	$normalized_x = calculate_normalized_x($center->lon);
+	$normalized_y = calculate_normalized_y($center->lat);
 
 	$zoom = 16;
 	$world_pow = $zoom + $tile_pow;
@@ -157,14 +164,14 @@ function meta_tag(string $property, string $content): string {
 	return "<meta property='" . htmlspecialchars($property) . "' content='" . htmlspecialchars($content) . "'>\n";
 }
 
-function fetch_element(string $type, int $id): object | null {
+function fetch_element(string $type, int $id): OsmOgImage\OsmElement | null {
 	global $settings;
 
 	$url = "$settings[osm_api_url]api/0.6/$type/$id.json";
 	$response_string = fetch($url);
 	if ($response_string === null) return null;
 	$response = json_decode($response_string);
-	return $response->elements[0];
+	return OsmOgImage\OsmNode::fromDecodedJson($response->elements[0]);
 }
 
 function fetch_tile_image(int $z, int $x, int $y): GdImage {
