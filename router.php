@@ -29,9 +29,10 @@ spl_autoload_register(function ($class_name) {
 	if (file_exists($filename)) require $filename;
 });
 
+$client = new OsmOgImage\HttpClient($settings["osm_api_url"], $settings["osm_tile_url"], $settings["log_http_requests"]);
+
 if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	$id = $match[1];
-	$client = new OsmOgImage\HttpClient($settings["osm_api_url"], $settings["osm_tile_url"]);
 	$node = $client->fetch_node($id);
 	if ($node === null) {
 		respond_with_dummy_image();
@@ -40,7 +41,6 @@ if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	}
 } elseif (preg_match("{^ways?/(\d+)/image\.png?$}", $request, $match)) {
 	$id = $match[1];
-	$client = new OsmOgImage\HttpClient($settings["osm_api_url"], $settings["osm_tile_url"]);
 	$way = $client->fetch_way($id);
 	if ($way === null) {
 		respond_with_dummy_image();
