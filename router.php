@@ -38,6 +38,17 @@ if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	} else {
 		respond_with_node_image($client, $node);
 	}
+} elseif (preg_match("{^ways?/(\d+)/image\.png?$}", $request, $match)) {
+	$id = $match[1];
+	$client = new OsmOgImage\HttpClient($settings["osm_api_url"], $settings["osm_tile_url"]);
+	$way = $client->fetch_way($id);
+	if ($way === null) {
+		respond_with_dummy_image();
+	} else {
+		// TODO
+		$fake_node = new OsmOgImage\OsmNode($way->getCenter());
+		respond_with_node_image($client, $fake_node);
+	}
 } elseif ($settings["element_pages"] && preg_match("{^nodes?/(\d+)/?$}", $request, $match)) {
 	$id = $match[1];
 	respond_with_node_page($id);

@@ -11,17 +11,22 @@ class HttpClient {
 	}
 
 	function fetch_node(int $id): ?OsmNode {
-		$data = $this->fetch_element_data("node", $id);
+		$data = $this->fetch_element_data("node/$id.json");
 		if ($data === null) return null;
-		return OsmNode::fromDecodedJson($data);
+		return OsmNode::fromDecodedJson($id, $data);
 	}
 
-	private function fetch_element_data(string $type, int $id): ?object {
-		$url = $this->osm_api_url . "api/0.6/$type/$id.json";
+	function fetch_way(int $id): ?OsmWay {
+		$data = $this->fetch_element_data("way/$id/full.json");
+		if ($data === null) return null;
+		return OsmWay::fromDecodedJson($id, $data);
+	}
+
+	private function fetch_element_data(string $path): ?object {
+		$url = $this->osm_api_url . "api/0.6/$path";
 		$response_string = $this->fetch($url);
 		if ($response_string === null) return null;
-		$response = json_decode($response_string);
-		return $response->elements[0];
+		return json_decode($response_string);
 	}
 
 	private function fetch(string $url): ?string {
