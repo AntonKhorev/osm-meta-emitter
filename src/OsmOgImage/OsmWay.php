@@ -1,7 +1,7 @@
 <?php namespace OsmOgImage;
 
 class OsmWay extends OsmElement {
-	function __construct(private LatLonList $points) {}
+	function __construct(private LatLonList $points) {} // TODO throw if empty list
 
 	public static function fromDecodedJson(int $id, object $data): static {
 		$node_points = [];
@@ -18,9 +18,17 @@ class OsmWay extends OsmElement {
 	}
 
 	function getCenter(): LatLon {
-		// TODO bbox etc
+		$min_lat = +INF;
+		$min_lon = +INF;
+		$max_lat = -INF;
+		$max_lon = -INF;
 		foreach ($this->points as $point) {
-			return $point;
+			$min_lat = min($min_lat, $point->lat);
+			$min_lon = min($min_lon, $point->lon);
+			$max_lat = max($max_lat, $point->lat);
+			$max_lon = max($max_lon, $point->lon);
 		}
+		// TODO this is wrong, should center in mercator coords
+		return new LatLon(($min_lat + $max_lat) / 2, ($min_lon + $max_lon) / 2);
 	}
 }
