@@ -3,7 +3,7 @@
 class OsmWay extends OsmElement {
 	function __construct(private NormalizedCoordsList $points) {} // TODO throw if empty list
 
-	public static function fromDecodedJson(int $id, object $data): static {
+	public static function fromDecodedJson(int $id, object $data): static | DeletedOsmElement {
 		$node_points = [];
 		foreach ($data->elements as $element_data) {
 			if ($element_data->type == "node") {
@@ -12,7 +12,8 @@ class OsmWay extends OsmElement {
 				$way_data = $element_data;
 			}
 		}
-		// TODO throw if not found
+		if ($way_data === null) throw new OsmElementInvalidDataException("no data provided for requested way #$id");
+		if (@$way_data->visible === false) return new DeletedOsmElement($way_data->version);
 		$way_points = array_map(fn($node_id) => $node_points[$node_id], $way_data->nodes);
 		return new static(new NormalizedCoordsList(...$way_points));
 	}

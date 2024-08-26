@@ -14,16 +14,36 @@ class HttpClient {
 		return imagecreatefromstring($data);
 	}
 
-	function fetch_node(int $id): ?OsmNode {
-		$data = $this->fetch_element_data("node/$id.json");
-		if ($data === null) return null;
-		return OsmNode::fromDecodedJson($id, $data);
+	function fetch_node(int $id): OsmNode {
+		$data = $this->fetch_element_data("nodes.json?nodes=$id");
+		if ($data === null) throw new OsmElementNotAvailableException("node #$id is not available");
+		$node = OsmNode::fromDecodedJson($id, $data);
+		if ($node instanceof OsmNode) {
+			return $node;
+		}
+
+		if ($node->version <= 1) throw new OsmElementNotAvailableException("node #$id is deleted with a version that is too low");
+		$previous_version = $node->version - 1;
+		$previous_data = $this->fetch_element_data("node/$id/$previous_version.json");
+		if ($previous_data === null) throw new OsmElementNotAvailableException("node #$id is not available when requesting a previous version");
+		$previous_node = OsmNode::fromDecodedJson($id, $previous_data);
+		if ($previous_node instanceof OsmNode) {
+			$previous_node->visible = false;
+			return $previous_node;
+		}
+		
+		throw new OsmElementNotAvailableException("node #$id is deleted with a previous version also deleted");
 	}
 
-	function fetch_way(int $id): ?OsmWay {
+	function fetch_way(int $id): OsmWay {
 		$data = $this->fetch_element_data("way/$id/full.json");
-		if ($data === null) return null;
-		return OsmWay::fromDecodedJson($id, $data);
+		if ($data === null) throw new OsmElementNotAvailableException("way #$id is not available");
+		$way = OsmWay::fromDecodedJson($id, $data);
+		if ($way instanceof OsmWay) {
+			return $way;
+		}
+
+		throw new OsmElementNotAvailableException("way #$id is deleted");
 	}
 
 	private function fetch_element_data(string $path): ?object {

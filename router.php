@@ -37,21 +37,21 @@ $page = new OsmOgImage\WebPage(
 
 if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	$id = $match[1];
-	$node = $client->fetch_node($id);
-	if ($node === null) {
-		respond_with_dummy_image();
-	} else {
+	try {
+		$node = $client->fetch_node($id);
 		respond_with_node_image($client, $node);
+	} catch (OsmOgImage\OsmElementException) {
+		respond_with_dummy_image();
 	}
 } elseif (preg_match("{^ways?/(\d+)/image\.png?$}", $request, $match)) {
 	$id = $match[1];
-	$way = $client->fetch_way($id);
-	if ($way === null) {
-		respond_with_dummy_image();
-	} else {
+	try {
+		$way = $client->fetch_way($id);
 		// TODO
 		$fake_node = new OsmOgImage\OsmNode($way->getCenter());
 		respond_with_node_image($client, $fake_node);
+	} catch (OsmOgImage\OsmElementException) {
+		respond_with_dummy_image();
 	}
 } elseif ($settings["element_pages"] && preg_match("{^nodes?/(\d+)/?$}", $request, $match)) {
 	$id = $match[1];
@@ -140,7 +140,11 @@ function respond_with_node_image(OsmOgImage\HttpClient $client, OsmOgImage\OsmNo
 		imageline($image, 0, $tile_size / 2 + 1, $tile_size - 1, $tile_size / 2 + 1, $crosshair_color);
 	}
 
-	$marker_image = imagecreatefrompng("assets/node_marker.png");
+	if ($node->visible) {
+		$marker_image = imagecreatefrompng("assets/node_marker.png");
+	} else {
+		$marker_image = imagecreatefrompng("assets/deleted_node_marker.png");
+	}
 	imagecopy(
 		$image, $marker_image,
 		$tile_size / 2 - imagesx($marker_image) / 2 + 1, $tile_size / 2 - imagesy($marker_image) / 2 + 1,

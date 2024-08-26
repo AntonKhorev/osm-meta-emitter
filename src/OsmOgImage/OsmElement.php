@@ -1,6 +1,8 @@
 <?php namespace OsmOgImage;
 
 abstract class OsmElement {
-	abstract static function fromDecodedJson(int $id, object $data): static;
+	public bool $visible = true;
+
+	abstract static function fromDecodedJson(int $id, object $data): static | DeletedOsmElement;
 	abstract function getCenter(): NormalizedCoords;
 }
