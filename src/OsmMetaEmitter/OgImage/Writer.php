@@ -9,20 +9,14 @@ class Writer {
 	) {}
 
 	function respondWithNodeImage(\OsmMetaEmitter\OsmElement\Node $node, bool $crosshair): void {
-		$osm_tile_pow = 8;
-		$zoom = 16;
-		$world_pow = $zoom + $osm_tile_pow;
-		$world_size = 1 << $world_pow;
-		$normalized_center = $node->getCenter();
-		$pixel_corner = new FloatPixelCoords(
-			$normalized_center->x * $world_size,
-			$normalized_center->y * $world_size
+		$scale = new Scale(16);
+		$composite_tile = CompositeTile::fromCenter(
+			$this->image_size_x, $this->image_size_y,
+			$scale->convertNormalizedCoordsToFloatPixelCoords($node->getCenter())
 		);
-		$composite_tile = CompositeTile::fromCenter($this->image_size_x, $this->image_size_y, $pixel_corner);
-
 		$image = $composite_tile->getBaseImage(
 			fn(string $path) => $this->client->fetch($this->osm_tile_url . $path),
-			$zoom, $osm_tile_pow
+			$scale
 		);
 
 		if ($crosshair) {
