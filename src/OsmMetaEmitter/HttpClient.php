@@ -1,17 +1,10 @@
 <?php namespace OsmMetaEmitter;
 
 class HttpClient implements OsmElement\HttpClient {
-	function __construct(private string $osm_tile_url, private bool $log_requests) {
+	function __construct(private bool $log_requests) {
 		if ($this->log_requests) {
 			openlog("osm-og-image server", LOG_PERROR, LOG_USER);
 		}
-	}
-
-	function fetchTileImage(int $z, int $x, int $y): ?\GdImage {
-		$url = $this->osm_tile_url . "$z/$x/$y.png";
-		$data = $this->fetch($url);
-		if ($data === null) return null;
-		return imagecreatefromstring($data);
 	}
 
 	function fetch(string $url): ?string {
