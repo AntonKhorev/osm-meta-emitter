@@ -1,12 +1,12 @@
-<?php namespace OsmMetaEmitter;
+<?php namespace OsmMetaEmitter\OgImage;
 
-class OgImage {
+class Writer {
 	function __construct(
 		private HttpClient $client,
 		private string $osm_tile_url
 	) {}
 
-	function respondWithNodeImage(OsmElement\Node $node, bool $crosshair): void {
+	function respondWithNodeImage(\OsmMetaEmitter\OsmElement\Node $node, bool $crosshair): void {
 		$tile_pow = 8;
 		$tile_size = 1 << $tile_pow;
 		$tile_mask = $tile_size - 1;
