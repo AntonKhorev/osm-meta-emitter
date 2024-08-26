@@ -1,4 +1,4 @@
-<?php namespace OsmOgImage;
+<?php namespace OsmOgImage\OsmElement;
 
 class NormalizedCoordsList implements \IteratorAggregate {
 	private array $array;

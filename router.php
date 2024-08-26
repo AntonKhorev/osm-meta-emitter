@@ -29,7 +29,7 @@ spl_autoload_register(function ($class_name) {
 	if (file_exists($filename)) require $filename;
 });
 
-$client = new OsmOgImage\HttpClient($settings["osm_api_url"], $settings["osm_tile_url"], $settings["log_http_requests"]);
+$client = new OsmOgImage\HttpClient($settings["osm_tile_url"], $settings["log_http_requests"]);
 $page = new OsmOgImage\WebPage(
 	(@$_SERVER['HTTPS'] ? "https" : "http") . "://$_SERVER[HTTP_HOST]${root}",
 	$settings["osm_web_url"], $settings["site_name"], $settings["site_description"]
@@ -37,20 +37,22 @@ $page = new OsmOgImage\WebPage(
 
 if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	$id = $match[1];
+	$loader = new OsmOgImage\OsmElement\Loader($client, $settings["osm_api_url"]);
 	try {
-		$node = $client->fetch_node($id);
+		$node = $loader->fetch_node($id);
 		respond_with_node_image($client, $node);
-	} catch (OsmOgImage\OsmElementException) {
+	} catch (OsmOgImage\OsmElement\Exception) {
 		respond_with_dummy_image();
 	}
 } elseif (preg_match("{^ways?/(\d+)/image\.png?$}", $request, $match)) {
 	$id = $match[1];
+	$loader = new OsmOgImage\OsmElement\Loader($client, $settings["osm_api_url"]);
 	try {
-		$way = $client->fetch_way($id);
+		$way = $loader->fetch_way($id);
 		// TODO
-		$fake_node = new OsmOgImage\OsmNode($way->getCenter());
+		$fake_node = new OsmOgImage\OsmElement\Node($way->getCenter());
 		respond_with_node_image($client, $fake_node);
-	} catch (OsmOgImage\OsmElementException) {
+	} catch (OsmOgImage\OsmElement\Exception) {
 		respond_with_dummy_image();
 	}
 } elseif ($settings["element_pages"] && preg_match("{^nodes?/(\d+)/?$}", $request, $match)) {
@@ -81,7 +83,7 @@ function respond_with_dummy_image(): void {
 	readfile($settings["site_logo"]);
 }
 
-function respond_with_node_image(OsmOgImage\HttpClient $client, OsmOgImage\OsmNode $node): void {
+function respond_with_node_image(OsmOgImage\HttpClient $client, OsmOgImage\OsmElement\Node $node): void {
 	global $settings;
 
 	$tile_pow = 8;

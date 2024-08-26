@@ -1,4 +1,4 @@
-<?php namespace OsmOgImage;
+<?php namespace OsmOgImage\OsmElement;
 
 // coords in range [0..1]
 
