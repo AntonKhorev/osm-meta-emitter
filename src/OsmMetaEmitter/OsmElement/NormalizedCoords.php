@@ -11,16 +11,16 @@ class NormalizedCoords {
 
 	static function fromLatLon(float $lat, float $lon): static {
 		return new static(
-			static::calculate_normalized_x($lon),
-			static::calculate_normalized_y($lat)
+			static::calculateNormalizedX($lon),
+			static::calculateNormalizedY($lat)
 		);
 	}
 
-	private static function calculate_normalized_x(float $lon): float {
+	private static function calculateNormalizedX(float $lon): float {
 		return ($lon + 180) / 360;
 	}
 	
-	private static function calculate_normalized_y(float $lat): float {
+	private static function calculateNormalizedY(float $lat): float {
 		$max_lat=85.0511287798;
 		$lat = max($lat, -$max_lat);
 		$lat = min($lat, +$max_lat);

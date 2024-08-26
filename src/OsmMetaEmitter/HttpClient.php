@@ -7,7 +7,7 @@ class HttpClient implements OsmElement\HttpClient {
 		}
 	}
 
-	function fetch_tile_image(int $z, int $x, int $y): ?\GdImage {
+	function fetchTileImage(int $z, int $x, int $y): ?\GdImage {
 		$url = $this->osm_tile_url . "$z/$x/$y.png";
 		$data = $this->fetch($url);
 		if ($data === null) return null;

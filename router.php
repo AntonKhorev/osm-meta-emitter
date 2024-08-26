@@ -39,7 +39,7 @@ if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	$id = $match[1];
 	$loader = new OsmMetaEmitter\OsmElement\Loader($client, $settings["osm_api_url"]);
 	try {
-		$node = $loader->fetch_node($id);
+		$node = $loader->fetchNode($id);
 		respond_with_node_image($client, $node);
 	} catch (OsmMetaEmitter\OsmElement\Exception) {
 		respond_with_dummy_image();
@@ -48,7 +48,7 @@ if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	$id = $match[1];
 	$loader = new OsmMetaEmitter\OsmElement\Loader($client, $settings["osm_api_url"]);
 	try {
-		$way = $loader->fetch_way($id);
+		$way = $loader->fetchWay($id);
 		// TODO
 		$fake_node = new OsmMetaEmitter\OsmElement\Node($way->getCenter());
 		respond_with_node_image($client, $fake_node);
@@ -57,10 +57,10 @@ if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	}
 } elseif ($settings["element_pages"] && preg_match("{^nodes?/(\d+)/?$}", $request, $match)) {
 	$id = $match[1];
-	$page->respond_with_node_page($id);
+	$page->respondWithNodePage($id);
 } elseif ($settings["element_pages"] && preg_match("{^ways?/(\d+)/?$}", $request, $match)) {
 	$id = $match[1];
-	$page->respond_with_way_page($id);
+	$page->respondWithWayPage($id);
 } else {
 	header("HTTP/1.1 404 Not Found");
 	header("Content-Type: text/plain");
@@ -105,15 +105,15 @@ function respond_with_node_image(OsmMetaEmitter\HttpClient $client, OsmMetaEmitt
 	$tile_y = $world_tile_corner_y >> $tile_pow;
 	
 	// TODO skip tiles outsize the world
-	$tile_image_00 = $client->fetch_tile_image($zoom, $tile_x, $tile_y);
+	$tile_image_00 = $client->fetchTileImage($zoom, $tile_x, $tile_y);
 	if ($fetch_extra_tile_x) {
-		$tile_image_10 = $client->fetch_tile_image($zoom, $tile_x + 1, $tile_y);
+		$tile_image_10 = $client->fetchTileImage($zoom, $tile_x + 1, $tile_y);
 	}
 	if ($fetch_extra_tile_y) {
-		$tile_image_01 = $client->fetch_tile_image($zoom, $tile_x, $tile_y + 1);
+		$tile_image_01 = $client->fetchTileImage($zoom, $tile_x, $tile_y + 1);
 	}
 	if ($fetch_extra_tile_x && $fetch_extra_tile_y) {
-		$tile_image_11 = $client->fetch_tile_image($zoom, $tile_x + 1, $tile_y + 1);
+		$tile_image_11 = $client->fetchTileImage($zoom, $tile_x + 1, $tile_y + 1);
 	}
 
 	$image = imagecreatetruecolor($tile_size, $tile_size);

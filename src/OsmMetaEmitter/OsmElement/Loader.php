@@ -6,19 +6,19 @@ class Loader {
 		private string $osm_api_url
 	) {}
 
-	function fetch_node(int $id): Node {
-		$data = $this->fetch_element_data("nodes.json?nodes=$id");
+	function fetchNode(int $id): Node {
+		$data = $this->fetchElementData("nodes.json?nodes=$id");
 		if ($data === null) throw new NotAvailableException("node #$id is not available");
-		$node = $this->get_node_or_deletion_from_data($id, $data);
+		$node = $this->getNodeOrDeletionFromData($id, $data);
 		if ($node instanceof Node) {
 			return $node;
 		}
 
 		if ($node->version <= 1) throw new NotAvailableException("node #$id is deleted with a version that is too low");
 		$previous_version = $node->version - 1;
-		$previous_data = $this->fetch_element_data("node/$id/$previous_version.json");
+		$previous_data = $this->fetchElementData("node/$id/$previous_version.json");
 		if ($previous_data === null) throw new NotAvailableException("node #$id is not available when requesting a previous version");
-		$previous_node = $this->get_node_or_deletion_from_data($id, $previous_data);
+		$previous_node = $this->getNodeOrDeletionFromData($id, $previous_data);
 		if ($previous_node instanceof Node) {
 			$previous_node->visible = false;
 			return $previous_node;
@@ -27,10 +27,10 @@ class Loader {
 		throw new NotAvailableException("node #$id is deleted with a previous version also deleted");
 	}
 
-	function fetch_way(int $id): Way {
-		$data = $this->fetch_element_data("way/$id/full.json");
+	function fetchWay(int $id): Way {
+		$data = $this->fetchElementData("way/$id/full.json");
 		if ($data === null) throw new NotAvailableException("way #$id is not available");
-		$way = $this->get_way_or_deletion_from_data($id, $data);
+		$way = $this->getWayOrDeletionFromData($id, $data);
 		if ($way instanceof Way) {
 			return $way;
 		}
@@ -38,14 +38,14 @@ class Loader {
 		throw new NotAvailableException("way #$id is deleted");
 	}
 
-	private function fetch_element_data(string $path): ?object {
+	private function fetchElementData(string $path): ?object {
 		$url = $this->osm_api_url . "api/0.6/$path";
 		$response_string = $this->client->fetch($url);
 		if ($response_string === null) return null;
 		return json_decode($response_string);
 	}
 
-	private function get_node_or_deletion_from_data(int $id, object $data): Node | Deletion {
+	private function getNodeOrDeletionFromData(int $id, object $data): Node | Deletion {
 		foreach ($data->elements as $element_data) {
 			if ($element_data->type == "node" && $element_data->id == $id) {
 				$node_data = $element_data;
@@ -57,7 +57,7 @@ class Loader {
 		return new Node($point);
 	}
 
-	private function get_way_or_deletion_from_data(int $id, object $data): Way | Deletion {
+	private function getWayOrDeletionFromData(int $id, object $data): Way | Deletion {
 		$node_points = [];
 		foreach ($data->elements as $element_data) {
 			if ($element_data->type == "node") {
