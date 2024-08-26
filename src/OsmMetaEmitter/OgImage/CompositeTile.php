@@ -31,7 +31,9 @@ class CompositeTile {
 	}
 
 	function getBaseImage(callable $fetchOsmTile, Scale $scale): \GdImage {
-		$image = imagecreatetruecolor($this->size_x, $this->size_y); // TODO fill with gray
+		$image = imagecreatetruecolor($this->size_x, $this->size_y);
+		$background_color = imagecolorallocate($image, 128, 128, 128);
+		imagefilledrectangle($image, 0, 0, $this->size_x, $this->size_y, $background_color);
 		foreach ($this->listOsmTilePlacements($scale) as $placement) {
 			$osm_tile_data = $fetchOsmTile($placement->path);
 			if ($osm_tile_data === null) continue;
