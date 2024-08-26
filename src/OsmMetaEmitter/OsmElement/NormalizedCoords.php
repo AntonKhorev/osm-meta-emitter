@@ -1,4 +1,4 @@
-<?php namespace OsmOgImage\OsmElement;
+<?php namespace OsmMetaEmitter\OsmElement;
 
 // coords in range [0..1]
 

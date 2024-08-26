@@ -1,4 +1,4 @@
-<?php namespace OsmOgImage\OsmElement;
+<?php namespace OsmMetaEmitter\OsmElement;
 
 class Node extends Element {
 	function __construct(private NormalizedCoords $point) {}

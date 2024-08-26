@@ -1,4 +1,4 @@
-<?php namespace OsmOgImage\OsmElement;
+<?php namespace OsmMetaEmitter\OsmElement;
 
 abstract class Element {
 	public bool $visible = true;

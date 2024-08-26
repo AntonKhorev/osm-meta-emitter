@@ -1,4 +1,4 @@
-<?php namespace OsmOgImage;
+<?php namespace OsmMetaEmitter;
 
 class WebPage {
 	function __construct(

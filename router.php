@@ -29,30 +29,30 @@ spl_autoload_register(function ($class_name) {
 	if (file_exists($filename)) require $filename;
 });
 
-$client = new OsmOgImage\HttpClient($settings["osm_tile_url"], $settings["log_http_requests"]);
-$page = new OsmOgImage\WebPage(
+$client = new OsmMetaEmitter\HttpClient($settings["osm_tile_url"], $settings["log_http_requests"]);
+$page = new OsmMetaEmitter\WebPage(
 	(@$_SERVER['HTTPS'] ? "https" : "http") . "://$_SERVER[HTTP_HOST]${root}",
 	$settings["osm_web_url"], $settings["site_name"], $settings["site_description"]
 );
 
 if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	$id = $match[1];
-	$loader = new OsmOgImage\OsmElement\Loader($client, $settings["osm_api_url"]);
+	$loader = new OsmMetaEmitter\OsmElement\Loader($client, $settings["osm_api_url"]);
 	try {
 		$node = $loader->fetch_node($id);
 		respond_with_node_image($client, $node);
-	} catch (OsmOgImage\OsmElement\Exception) {
+	} catch (OsmMetaEmitter\OsmElement\Exception) {
 		respond_with_dummy_image();
 	}
 } elseif (preg_match("{^ways?/(\d+)/image\.png?$}", $request, $match)) {
 	$id = $match[1];
-	$loader = new OsmOgImage\OsmElement\Loader($client, $settings["osm_api_url"]);
+	$loader = new OsmMetaEmitter\OsmElement\Loader($client, $settings["osm_api_url"]);
 	try {
 		$way = $loader->fetch_way($id);
 		// TODO
-		$fake_node = new OsmOgImage\OsmElement\Node($way->getCenter());
+		$fake_node = new OsmMetaEmitter\OsmElement\Node($way->getCenter());
 		respond_with_node_image($client, $fake_node);
-	} catch (OsmOgImage\OsmElement\Exception) {
+	} catch (OsmMetaEmitter\OsmElement\Exception) {
 		respond_with_dummy_image();
 	}
 } elseif ($settings["element_pages"] && preg_match("{^nodes?/(\d+)/?$}", $request, $match)) {
@@ -83,7 +83,7 @@ function respond_with_dummy_image(): void {
 	readfile($settings["site_logo"]);
 }
 
-function respond_with_node_image(OsmOgImage\HttpClient $client, OsmOgImage\OsmElement\Node $node): void {
+function respond_with_node_image(OsmMetaEmitter\HttpClient $client, OsmMetaEmitter\OsmElement\Node $node): void {
 	global $settings;
 
 	$tile_pow = 8;

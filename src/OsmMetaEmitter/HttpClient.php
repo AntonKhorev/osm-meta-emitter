@@ -1,4 +1,4 @@
-<?php namespace OsmOgImage;
+<?php namespace OsmMetaEmitter;
 
 class HttpClient implements OsmElement\HttpClient {
 	function __construct(private string $osm_tile_url, private bool $log_requests) {
