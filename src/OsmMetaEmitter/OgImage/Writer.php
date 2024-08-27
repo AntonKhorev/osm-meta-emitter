@@ -49,16 +49,16 @@ class Writer {
 		) {
 			if ($way->visible) {
 				$line_color = imagecolorallocate($image, 255, 98, 0);
-				$rectangle = $window->getOffsetBbox($way_bbox->toInt());
-				imagerectangle(
-					$image,
-					$rectangle->min->x, $rectangle->min->y,
-					$rectangle->max->x, $rectangle->max->y,
-					$line_color
-				);
 			} else {
-				// TODO red color, but we don't have the shape yet
+				$line_color = imagecolorallocate($image, 204, 43, 72);
 			}
+			$rectangle = $window->getOffsetBbox($way_bbox->toInt());
+			imagerectangle(
+				$image,
+				$rectangle->min->x, $rectangle->min->y,
+				$rectangle->max->x, $rectangle->max->y,
+				$line_color
+			);
 		} else {
 			$this->drawCenterPointMarker($image, $way->visible);
 		}
