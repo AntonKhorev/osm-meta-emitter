@@ -2,27 +2,29 @@
 
 class CompositeTile {
 	function __construct(
+		private \OsmMetaEmitter\Graphics\CanvasFactory $canvas_factory,
 		private Scale $scale,
 		private IntPixelCoordsBbox $window
 	) {}
 
-	function getImage(callable $fetchOsmTile): \GdImage {
+	function getCanvas(callable $fetchOsmTile): \OsmMetaEmitter\Graphics\Canvas { // TODO move arg to ctor
 		$size = $this->window->getSize();
-		$image = imagecreatetruecolor($size->x, $size->y);
-		$background_color = imagecolorallocate($image, 128, 128, 128);
-		imagefilledrectangle($image, 0, 0, $size->x, $size->y, $background_color);
+		$canvas = $this->canvas_factory->makeCanvas(
+			$size->x, $size->y,
+			new \OsmMetaEmitter\Graphics\Color("#808080")
+		);
+
 		foreach ($this->listOsmTilePlacements($this->scale) as $placement) {
 			$osm_tile_data = $fetchOsmTile($placement->path);
 			if ($osm_tile_data === null) continue;
-			$osm_tile_image = imagecreatefromstring($osm_tile_data);
-			imagecopy(
-				$image, $osm_tile_image,
+			$canvas->pasteImage($osm_tile_data,
 				$placement->offset->x, $placement->offset->y,
 				0, 0,
 				$this->scale->getTileSize(), $this->scale->getTileSize()
 			);
 		}
-		return $image;
+
+		return $canvas;
 	}
 
 	private function listOsmTilePlacements(Scale $scale): \Generator {

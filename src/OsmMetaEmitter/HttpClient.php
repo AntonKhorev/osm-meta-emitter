@@ -13,7 +13,7 @@ class HttpClient implements OsmElement\HttpClient, OgImage\HttpClient {
 		}
 		$ch = curl_init(); 
 		curl_setopt($ch, CURLOPT_URL, $url);
-		curl_setopt($ch, CURLOPT_USERAGENT, "osm-og-image curl/" . curl_version()["version"]);
+		curl_setopt($ch, CURLOPT_USERAGENT, "osm-meta-emitter curl/" . curl_version()["version"]);
 		curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
 		curl_setopt($ch, CURLOPT_HEADER, false);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);

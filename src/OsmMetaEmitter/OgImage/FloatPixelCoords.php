@@ -26,4 +26,8 @@ class FloatPixelCoords {
 			ceil($this->y)
 		);
 	}
+
+	function toArray(): array {
+		return [$this->x, $this->y];
+	}
 }
