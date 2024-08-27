@@ -108,6 +108,7 @@ class Writer {
 		} else {
 			$line_color = imagecolorallocate($image, 204, 43, 72);
 		}
+		imagesetthickness($image, 4);
 		imageopenpolygon($image, $gd_points, $line_color);
 	}
 }
