@@ -18,7 +18,9 @@ class Writer {
 		$image = $composite_tile->getImage(
 			fn(string $path) => $this->client->fetch($this->osm_tile_url . $path, 15)
 		);
+
 		if ($crosshair) $this->drawCrosshair($image);
+
 		$this->drawCenterPointMarker($image, $node->visible);
 
 		header("Content-Type: image/png");
@@ -38,7 +40,28 @@ class Writer {
 		);
 
 		if ($crosshair) $this->drawCrosshair($image);
-		$this->drawCenterPointMarker($image, $way->visible); // TODO actually draw way if it's large enough
+
+		$way_bbox = $scale->convertNormalizedCoordsBboxToFloatPixelCoordsBbox($way->getBbox());
+		$min_size_to_draw_lines = 8;
+		if (
+			$way_bbox->getSize()->x >= $min_size_to_draw_lines ||
+			$way_bbox->getSize()->y >= $min_size_to_draw_lines
+		) {
+			if ($way->visible) {
+				$line_color = imagecolorallocate($image, 255, 98, 0);
+				$rectangle = $window->getOffsetBbox($way_bbox->toInt());
+				imagerectangle(
+					$image,
+					$rectangle->min->x, $rectangle->min->y,
+					$rectangle->max->x, $rectangle->max->y,
+					$line_color
+				);
+			} else {
+				// TODO red color, but we don't have the shape yet
+			}
+		} else {
+			$this->drawCenterPointMarker($image, $way->visible);
+		}
 
 		header("Content-Type: image/png");
 		imagepng($image);
@@ -48,7 +71,7 @@ class Writer {
 		$size_to_fit_into = $this->image_size->withoutMargins(4);
 		for ($zoom = 16; $zoom >=0; $zoom--) {
 			$scale = new Scale($zoom);
-			$pixel_bbox = $scale->convertNormalizedCoordsBboxToFloatPixelCoordBbox($bbox)->toInt();
+			$pixel_bbox = $scale->convertNormalizedCoordsBboxToFloatPixelCoordsBbox($bbox)->toInt();
 			if ($pixel_bbox->getSize()->fitsInto($size_to_fit_into)) return $scale;
 		}
 		return new Scale(0);

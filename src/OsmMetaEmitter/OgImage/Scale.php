@@ -29,7 +29,7 @@ class Scale {
 		);
 	}
 
-	function convertNormalizedCoordsBboxToFloatPixelCoordBbox(NormalizedCoordsBbox $bbox): FloatPixelCoordsBbox {
+	function convertNormalizedCoordsBboxToFloatPixelCoordsBbox(NormalizedCoordsBbox $bbox): FloatPixelCoordsBbox {
 		return new FloatPixelCoordsBbox(
 			$this->convertNormalizedCoordsToFloatPixelCoords($bbox->min),
 			$this->convertNormalizedCoordsToFloatPixelCoords($bbox->max)

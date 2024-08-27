@@ -31,4 +31,11 @@ class IntPixelCoordsBbox {
 			$coords->y - $this->min->y
 		);
 	}
+
+	function getOffsetBbox(IntPixelCoordsBbox $bbox): IntPixelCoordsBbox {
+		return new IntPixelCoordsBbox(
+			$this->getOffset($bbox->min),
+			$this->getOffset($bbox->max)
+		);
+	}
 }
