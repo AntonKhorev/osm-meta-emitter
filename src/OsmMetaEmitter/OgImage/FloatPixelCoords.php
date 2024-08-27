@@ -6,14 +6,21 @@ class FloatPixelCoords {
 		public float $y
 	) {}
 
-	function floor(): IntPixelCoords {
+	function toInt(): IntPixelCoords {
+		return new IntPixelCoords(
+			round($this->x),
+			round($this->y)
+		);
+	}
+
+	function toIntForMin(): IntPixelCoords {
 		return new IntPixelCoords(
 			floor($this->x),
 			floor($this->y)
 		);
 	}
 
-	function ceil(): IntPixelCoords {
+	function toIntForMax(): IntPixelCoords {
 		return new IntPixelCoords(
 			ceil($this->x),
 			ceil($this->y)

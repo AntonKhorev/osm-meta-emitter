@@ -1,7 +1,7 @@
 <?php namespace OsmMetaEmitter\OsmElement;
 
 class Node extends Element {
-	function __construct(private NormalizedCoords $point) {}
+	function __construct(public NormalizedCoords $point) {}
 
 	function getCenter(): NormalizedCoords {
 		return $this->point;

@@ -15,8 +15,8 @@ class FloatPixelCoordsBbox {
 
 	function toInt(): IntPixelCoordsBbox {
 		return new IntPixelCoordsBbox(
-			$this->min->floor(),
-			$this->max->ceil()
+			$this->min->toIntForMin(),
+			$this->max->toIntForMax()
 		);
 	}
 }

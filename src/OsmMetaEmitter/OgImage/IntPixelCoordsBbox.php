@@ -25,17 +25,24 @@ class IntPixelCoordsBbox {
 		);
 	}
 
-	function getOffset(IntPixelCoords $coords): IntPixelCoords {
+	function getFloatOffset(FloatPixelCoords $coords): FloatPixelCoords {
+		return new FloatPixelCoords(
+			$coords->x - $this->min->x,
+			$coords->y - $this->min->y
+		);
+	}
+
+	function getIntOffset(IntPixelCoords $coords): IntPixelCoords {
 		return new IntPixelCoords(
 			$coords->x - $this->min->x,
 			$coords->y - $this->min->y
 		);
 	}
 
-	function getOffsetBbox(IntPixelCoordsBbox $bbox): IntPixelCoordsBbox {
+	function getIntOffsetBbox(IntPixelCoordsBbox $bbox): IntPixelCoordsBbox {
 		return new IntPixelCoordsBbox(
-			$this->getOffset($bbox->min),
-			$this->getOffset($bbox->max)
+			$this->getIntOffset($bbox->min),
+			$this->getIntOffset($bbox->max)
 		);
 	}
 }

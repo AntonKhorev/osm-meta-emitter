@@ -31,7 +31,7 @@ class CompositeTile {
 		);
 		foreach ($bbox->iterateOverTileIndexes() as $tile_index) {
 			$tile_coords = $scale->convertTileIndexToIntPixelCoords($tile_index);
-			$tile_offset = $this->window->getOffset($tile_coords);
+			$tile_offset = $this->window->getIntOffset($tile_coords);
 			yield new OsmTilePlacement("$scale->zoom/$tile_index->x/$tile_index->y.png", $tile_offset);
 		}
 	}

@@ -47,18 +47,15 @@ class Writer {
 			$way_bbox->getSize()->x >= $min_size_to_draw_lines ||
 			$way_bbox->getSize()->y >= $min_size_to_draw_lines
 		) {
-			if ($way->visible) {
-				$line_color = imagecolorallocate($image, 255, 98, 0);
-			} else {
-				$line_color = imagecolorallocate($image, 204, 43, 72);
-			}
-			$rectangle = $window->getOffsetBbox($way_bbox->toInt());
-			imagerectangle(
-				$image,
-				$rectangle->min->x, $rectangle->min->y,
-				$rectangle->max->x, $rectangle->max->y,
-				$line_color
+			$points = new FloatPixelCoordsList(
+				...array_map(
+					fn($point) => $window->getFloatOffset(
+						$scale->convertNormalizedCoordsToFloatPixelCoords($point)
+					),
+					iterator_to_array($way->points)
+				)
 			);
+			$this->drawPolyLine($image, $way->visible, $points);
 		} else {
 			$this->drawCenterPointMarker($image, $way->visible);
 		}
@@ -98,5 +95,19 @@ class Writer {
 			0, 0,
 			imagesx($marker_image), imagesy($marker_image)
 		);
+	}
+
+	private function drawPolyLine(\GdImage $image, bool $visible, FloatPixelCoordsList $points) {
+		$gd_points = [];
+		foreach ($points as $point) {
+			$gd_points[] = $point->toInt()->x;
+			$gd_points[] = $point->toInt()->y;
+		}
+		if ($visible) {
+			$line_color = imagecolorallocate($image, 255, 98, 0);
+		} else {
+			$line_color = imagecolorallocate($image, 204, 43, 72);
+		}
+		imageopenpolygon($image, $gd_points, $line_color);
 	}
 }
