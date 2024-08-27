@@ -1,22 +1,21 @@
 <?php namespace OsmMetaEmitter\OgImage;
 
+// TODO split into IntPixelBbox and tile loader
 class CompositeTile {
 	function __construct(
-		public int $size_x,
-		public int $size_y,
+		public IntPixelSize $size,
 		public IntPixelCoords $corner
 	) {}
 
 	static function fromCenter(
-		int $size_x,
-		int $size_y,
+		IntPixelSize $size,
 		FloatPixelCoords $center
 	): static {
 		$corner = new IntPixelCoords(
-			round($center->x - $size_x / 2),
-			round($center->y - $size_y / 2)
+			round($center->x - $size->x / 2),
+			round($center->y - $size->y / 2)
 		);
-		return new static($size_x, $size_y, $corner);
+		return new static($size, $corner);
 	}
 
 	function getMinCorner(): IntPixelCoords {
@@ -25,15 +24,15 @@ class CompositeTile {
 
 	function getMaxCorner(): IntPixelCoords {
 		return new IntPixelCoords(
-			$this->corner->x + $this->size_x - 1,
-			$this->corner->y + $this->size_y - 1
+			$this->corner->x + $this->size->x - 1,
+			$this->corner->y + $this->size->y - 1
 		);
 	}
 
 	function getBaseImage(callable $fetchOsmTile, Scale $scale): \GdImage {
-		$image = imagecreatetruecolor($this->size_x, $this->size_y);
+		$image = imagecreatetruecolor($this->size->x, $this->size->y);
 		$background_color = imagecolorallocate($image, 128, 128, 128);
-		imagefilledrectangle($image, 0, 0, $this->size_x, $this->size_y, $background_color);
+		imagefilledrectangle($image, 0, 0, $this->size->x, $this->size->y, $background_color);
 		foreach ($this->listOsmTilePlacements($scale) as $placement) {
 			$osm_tile_data = $fetchOsmTile($placement->path);
 			if ($osm_tile_data === null) continue;

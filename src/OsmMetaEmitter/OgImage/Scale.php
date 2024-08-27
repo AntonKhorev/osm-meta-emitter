@@ -1,6 +1,7 @@
 <?php namespace OsmMetaEmitter\OgImage;
 
 use OsmMetaEmitter\OsmElement\NormalizedCoords;
+use OsmMetaEmitter\OsmElement\NormalizedCoordsBbox;
 
 class Scale {
 	function __construct(
@@ -25,6 +26,13 @@ class Scale {
 		return new FloatPixelCoords(
 			$coords->x * $this->getWorldSize(),
 			$coords->y * $this->getWorldSize()
+		);
+	}
+
+	function convertNormalizedCoordsBboxToFloatPixelCoordBbox(NormalizedCoordsBbox $bbox): FloatPixelCoordsBbox {
+		return new FloatPixelCoordsBbox(
+			$this->convertNormalizedCoordsToFloatPixelCoords($bbox->min),
+			$this->convertNormalizedCoordsToFloatPixelCoords($bbox->max)
 		);
 	}
 

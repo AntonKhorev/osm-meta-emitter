@@ -32,11 +32,12 @@ $page = new OsmMetaEmitter\WebPage(
 	(@$_SERVER['HTTPS'] ? "https" : "http") . "://$_SERVER[HTTP_HOST]${root}",
 	$settings["osm_web_url"], $settings["site_name"], $settings["site_description"]
 );
+$image_size = new OsmMetaEmitter\OgImage\IntPixelSize($settings["image_size_x"], $settings["image_size_y"]);
 
 if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	$id = $match[1];
 	$loader = new OsmMetaEmitter\OsmElement\Loader($client, $settings["osm_api_url"]);
-	$image = new OsmMetaEmitter\OgImage\Writer($client, $settings["osm_tile_url"], $settings["image_size_x"], $settings["image_size_y"]);
+	$image = new OsmMetaEmitter\OgImage\Writer($client, $settings["osm_tile_url"], $image_size);
 	try {
 		$node = $loader->fetchNode($id);
 		$image->respondWithNodeImage($node, $settings["image_crosshair"]);
@@ -46,12 +47,10 @@ if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 } elseif (preg_match("{^ways?/(\d+)/image\.png?$}", $request, $match)) {
 	$id = $match[1];
 	$loader = new OsmMetaEmitter\OsmElement\Loader($client, $settings["osm_api_url"]);
-	$image = new OsmMetaEmitter\OgImage\Writer($client, $settings["osm_tile_url"], $settings["image_size_x"], $settings["image_size_y"]);
+	$image = new OsmMetaEmitter\OgImage\Writer($client, $settings["osm_tile_url"], $image_size);
 	try {
 		$way = $loader->fetchWay($id);
-		// TODO
-		$fake_node = new OsmMetaEmitter\OsmElement\Node($way->getCenter());
-		$image->respondWithNodeImage($fake_node, $settings["image_crosshair"]);
+		$image->respondWithWayImage($way, $settings["image_crosshair"]);
 	} catch (OsmMetaEmitter\OsmElement\Exception) {
 		respond_with_dummy_image();
 	}

@@ -6,4 +6,8 @@ class Node extends Element {
 	function getCenter(): NormalizedCoords {
 		return $this->point;
 	}
+
+	function getBbox(): NormalizedCoordsBbox {
+		return new NormalizedCoordsBbox($this->point, $this->point);
+	}
 }
