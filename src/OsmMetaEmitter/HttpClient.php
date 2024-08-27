@@ -7,13 +7,14 @@ class HttpClient implements OsmElement\HttpClient, OgImage\HttpClient {
 		}
 	}
 
-	function fetch(string $url): ?string {
+	function fetch(string $url, int $timeout = 60): ?string {
 		if ($this->log_requests) {
 			syslog(LOG_INFO, "http request: $url");
 		}
 		$ch = curl_init(); 
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_USERAGENT, "osm-og-image curl/" . curl_version()["version"]);
+		curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
 		curl_setopt($ch, CURLOPT_HEADER, false);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		$response_string = curl_exec($ch);

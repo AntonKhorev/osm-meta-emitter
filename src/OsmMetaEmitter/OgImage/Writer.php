@@ -15,7 +15,7 @@ class Writer {
 			$scale->convertNormalizedCoordsToFloatPixelCoords($node->getCenter())
 		);
 		$image = $composite_tile->getBaseImage(
-			fn(string $path) => $this->client->fetch($this->osm_tile_url . $path),
+			fn(string $path) => $this->client->fetch($this->osm_tile_url . $path, 15),
 			$scale
 		);
 
