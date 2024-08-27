@@ -36,6 +36,13 @@ class Scale {
 		);
 	}
 
+	function convertIntPixelCoordsBboxToTileIndexBbox(IntPixelCoordsBbox $bbox): TileIndexBbox {
+		return new TileIndexBbox(
+			$this->convertIntPixelCoordsToTileIndex($bbox->min),
+			$this->convertIntPixelCoordsToTileIndex($bbox->max)
+		);
+	}
+
 	function convertIntPixelCoordsToTileIndex(IntPixelCoords $coords): TileIndex {
 		return new TileIndex(
 			$coords->x >> $this->tile_pow,

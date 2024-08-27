@@ -9,15 +9,15 @@ class Writer {
 
 	function respondWithNodeImage(\OsmMetaEmitter\OsmElement\Node $node, bool $crosshair): void {
 		$scale = new Scale(16);
-		$composite_tile = CompositeTile::fromCenter(
-			$this->image_size,
-			$scale->convertNormalizedCoordsToFloatPixelCoords($node->getCenter())
+		$window = IntPixelCoordsBbox::fromCenterAndSize(
+			$scale->convertNormalizedCoordsToFloatPixelCoords($node->getCenter()),
+			$this->image_size
 		);
-		$image = $composite_tile->getBaseImage(
-			fn(string $path) => $this->client->fetch($this->osm_tile_url . $path, 15),
-			$scale
-		);
+		$composite_tile = new CompositeTile($scale, $window);
 
+		$image = $composite_tile->getImage(
+			fn(string $path) => $this->client->fetch($this->osm_tile_url . $path, 15)
+		);
 		if ($crosshair) $this->drawCrosshair($image);
 		$this->drawCenterPointMarker($image, $node->visible);
 
@@ -27,13 +27,14 @@ class Writer {
 
 	function respondWithWayImage(\OsmMetaEmitter\OsmElement\Way $way, bool $crosshair): void {
 		$scale = $this->getScaleForNormalizedCoordsBbox($way->getBbox());
-		$composite_tile = CompositeTile::fromCenter(
-			$this->image_size,
-			$scale->convertNormalizedCoordsToFloatPixelCoords($way->getCenter())
+		$window = IntPixelCoordsBbox::fromCenterAndSize(
+			$scale->convertNormalizedCoordsToFloatPixelCoords($way->getCenter()),
+			$this->image_size
 		);
-		$image = $composite_tile->getBaseImage(
-			fn(string $path) => $this->client->fetch($this->osm_tile_url . $path, 15),
-			$scale
+		$composite_tile = new CompositeTile($scale, $window);
+
+		$image = $composite_tile->getImage(
+			fn(string $path) => $this->client->fetch($this->osm_tile_url . $path, 15)
 		);
 
 		if ($crosshair) $this->drawCrosshair($image);
