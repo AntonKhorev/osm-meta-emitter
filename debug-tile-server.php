@@ -5,13 +5,19 @@
 // use this to serve for development purposes:
 // php -S localhost:8001 debug-tile-server.php
 
-openlog("osm-og-image debug-tile-server", LOG_PERROR, LOG_USER);
+require __DIR__ . "/src/OsmMetaEmitter/Settings.php";
+
+$settings = OsmMetaEmitter\Settings::read();
+
+openlog("osm-meta-emitter debug-tile-server", LOG_PERROR, LOG_USER);
 
 if (preg_match("{/(\d+)/(\d+)/(\d+)\.png$}", $_SERVER['REQUEST_URI'], $matches)) {
 	$z = $matches[1];
 	$x = $matches[2];
 	$y = $matches[3];
 	syslog(LOG_INFO, "requested tile z = $z, x = $x, y = $y");
+
+	sleep($settings["debug_tile_server_sleep"]);
 
 	$image = imagecreatetruecolor(256, 256);
 	$frame_color = imagecolorallocate($image, 128, 128, 128);

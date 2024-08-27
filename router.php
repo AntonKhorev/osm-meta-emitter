@@ -5,9 +5,13 @@
 // use this to serve for development purposes:
 // php -S localhost:8000 router.php
 
-$settings = [];
-read_settings_file("settings.ini");
-read_settings_file("settings.local.ini");
+spl_autoload_register(function ($class_name) {
+	$class_path = str_replace("\\", "/", $class_name);
+	$filename = __DIR__ . "/src/" . $class_path . ".php";
+	if (file_exists($filename)) require $filename;
+});
+
+$settings = OsmMetaEmitter\Settings::read();
 
 if (php_sapi_name() == "cli-server") {
 	$root = "/";
@@ -22,12 +26,6 @@ if (php_sapi_name() == "cli-server") {
 if (substr($_SERVER['REQUEST_URI'], 0, strlen($root)) == $root) {
 	$request = substr($_SERVER['REQUEST_URI'], strlen($root));
 }
-
-spl_autoload_register(function ($class_name) {
-	$class_path = str_replace("\\", "/", $class_name);
-	$filename = __DIR__ . "/src/" . $class_path . ".php";
-	if (file_exists($filename)) require $filename;
-});
 
 $client = new OsmMetaEmitter\HttpClient($settings["osm_tile_url"], $settings["log_http_requests"]);
 $page = new OsmMetaEmitter\WebPage(
@@ -67,15 +65,6 @@ if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	header("HTTP/1.1 404 Not Found");
 	header("Content-Type: text/plain");
 	echo "not found\n";
-}
-
-function read_settings_file(string $filename): void {
-	global $settings;
-
-	$new_settings = @parse_ini_file($filename);
-	if ($new_settings) {
-		$settings = array_merge($settings, $new_settings);
-	}
 }
 
 function respond_with_dummy_image(): void {
