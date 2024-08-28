@@ -32,13 +32,13 @@ $page = new OsmMetaEmitter\WebPage(
 	(@$_SERVER['HTTPS'] ? "https" : "http") . "://$_SERVER[HTTP_HOST]${root}",
 	$settings["osm_web_url"], $settings["site_name"], $settings["site_description"]
 );
-$image_size = new OsmMetaEmitter\OgImage\IntPixelSize($settings["image_size_x"], $settings["image_size_y"]);
+$image_size = new OsmMetaEmitter\Image\IntPixelSize($settings["image_size_x"], $settings["image_size_y"]);
 $canvas_factory = new OsmMetaEmitter\Graphics\GdCanvasFactory;
 
 if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	$id = $match[1];
 	$loader = new OsmMetaEmitter\Osm\Loader($client, $settings["osm_api_url"]);
-	$image_writer = new OsmMetaEmitter\OgImage\Writer($client, $settings["osm_tile_url"], $image_size, $canvas_factory);
+	$image_writer = new OsmMetaEmitter\Image\Writer($client, $settings["osm_tile_url"], $image_size, $canvas_factory);
 	try {
 		$node = $loader->fetchNode($id);
 		$image_writer->respondWithNodeImage($node, $settings["image_crosshair"]);
@@ -48,7 +48,7 @@ if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 } elseif (preg_match("{^ways?/(\d+)/image\.png?$}", $request, $match)) {
 	$id = $match[1];
 	$loader = new OsmMetaEmitter\Osm\Loader($client, $settings["osm_api_url"]);
-	$image_writer = new OsmMetaEmitter\OgImage\Writer($client, $settings["osm_tile_url"], $image_size, $canvas_factory);
+	$image_writer = new OsmMetaEmitter\Image\Writer($client, $settings["osm_tile_url"], $image_size, $canvas_factory);
 	try {
 		$way = $loader->fetchWay($id);
 		$image_writer->respondWithWayImage($way, $settings["image_crosshair"]);

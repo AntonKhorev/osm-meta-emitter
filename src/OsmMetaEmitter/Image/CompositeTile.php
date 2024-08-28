@@ -1,4 +1,4 @@
-<?php namespace OsmMetaEmitter\OgImage;
+<?php namespace OsmMetaEmitter\Image;
 
 class CompositeTile {
 	function __construct(

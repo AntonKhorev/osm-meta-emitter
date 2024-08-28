@@ -1,4 +1,4 @@
-<?php namespace OsmMetaEmitter\OgImage;
+<?php namespace OsmMetaEmitter\Image;
 
 use OsmMetaEmitter\Osm\NormalizedCoords;
 use OsmMetaEmitter\Osm\NormalizedCoordsBbox;

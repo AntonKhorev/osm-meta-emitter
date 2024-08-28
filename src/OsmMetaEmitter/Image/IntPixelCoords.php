@@ -1,4 +1,4 @@
-<?php namespace OsmMetaEmitter\OgImage;
+<?php namespace OsmMetaEmitter\Image;
 
 class IntPixelCoords {
 	function __construct(

@@ -1,6 +1,6 @@
 <?php namespace OsmMetaEmitter;
 
-class HttpClient implements Osm\HttpClient, OgImage\HttpClient {
+class HttpClient implements Osm\HttpClient, Image\HttpClient {
 	function __construct(private bool $log_requests) {
 		if ($this->log_requests) {
 			openlog("osm-meta-emitter server", LOG_PERROR, LOG_USER);

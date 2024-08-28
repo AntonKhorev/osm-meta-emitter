@@ -1,4 +1,4 @@
-<?php namespace OsmMetaEmitter\OgImage;
+<?php namespace OsmMetaEmitter\Image;
 
 class FloatPixelCoordsList implements \IteratorAggregate {
 	private array $array;
