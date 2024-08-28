@@ -1,4 +1,4 @@
-<?php namespace OsmMetaEmitter\OsmElement;
+<?php namespace OsmMetaEmitter\Osm;
 
 class Loader {
 	function __construct(

@@ -37,22 +37,22 @@ $canvas_factory = new OsmMetaEmitter\Graphics\GdCanvasFactory;
 
 if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	$id = $match[1];
-	$loader = new OsmMetaEmitter\OsmElement\Loader($client, $settings["osm_api_url"]);
+	$loader = new OsmMetaEmitter\Osm\Loader($client, $settings["osm_api_url"]);
 	$image_writer = new OsmMetaEmitter\OgImage\Writer($client, $settings["osm_tile_url"], $image_size, $canvas_factory);
 	try {
 		$node = $loader->fetchNode($id);
 		$image_writer->respondWithNodeImage($node, $settings["image_crosshair"]);
-	} catch (OsmMetaEmitter\OsmElement\Exception) {
+	} catch (OsmMetaEmitter\Osm\Exception) {
 		respond_with_dummy_image();
 	}
 } elseif (preg_match("{^ways?/(\d+)/image\.png?$}", $request, $match)) {
 	$id = $match[1];
-	$loader = new OsmMetaEmitter\OsmElement\Loader($client, $settings["osm_api_url"]);
+	$loader = new OsmMetaEmitter\Osm\Loader($client, $settings["osm_api_url"]);
 	$image_writer = new OsmMetaEmitter\OgImage\Writer($client, $settings["osm_tile_url"], $image_size, $canvas_factory);
 	try {
 		$way = $loader->fetchWay($id);
 		$image_writer->respondWithWayImage($way, $settings["image_crosshair"]);
-	} catch (OsmMetaEmitter\OsmElement\Exception) {
+	} catch (OsmMetaEmitter\Osm\Exception) {
 		respond_with_dummy_image();
 	}
 } elseif ($settings["element_pages"] && preg_match("{^nodes?/(\d+)/?$}", $request, $match)) {

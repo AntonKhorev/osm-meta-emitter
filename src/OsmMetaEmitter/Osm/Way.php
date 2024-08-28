@@ -1,4 +1,4 @@
-<?php namespace OsmMetaEmitter\OsmElement;
+<?php namespace OsmMetaEmitter\Osm;
 
 class Way extends Element {
 	function __construct(public NormalizedCoordsList $points) {} // TODO throw if empty list

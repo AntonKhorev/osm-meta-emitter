@@ -1,3 +1,3 @@
-<?php namespace OsmMetaEmitter\OsmElement;
+<?php namespace OsmMetaEmitter\Osm;
 
 class NotAvailableException extends Exception {}

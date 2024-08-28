@@ -8,7 +8,7 @@ class Writer {
 		private \OsmMetaEmitter\Graphics\CanvasFactory $canvas_factory
 	) {}
 
-	function respondWithNodeImage(\OsmMetaEmitter\OsmElement\Node $node, bool $crosshair): void {
+	function respondWithNodeImage(\OsmMetaEmitter\Osm\Node $node, bool $crosshair): void {
 		$scale = new Scale(16);
 		$window = IntPixelCoordsBbox::fromCenterAndSize(
 			$scale->convertNormalizedCoordsToFloatPixelCoords($node->getCenter()),
@@ -27,7 +27,7 @@ class Writer {
 		$canvas->outputImage();
 	}
 
-	function respondWithWayImage(\OsmMetaEmitter\OsmElement\Way $way, bool $crosshair): void {
+	function respondWithWayImage(\OsmMetaEmitter\Osm\Way $way, bool $crosshair): void {
 		$scale = $this->getScaleForNormalizedCoordsBbox($way->getBbox());
 		$window = IntPixelCoordsBbox::fromCenterAndSize(
 			$scale->convertNormalizedCoordsToFloatPixelCoords($way->getCenter()),
@@ -62,7 +62,7 @@ class Writer {
 		$canvas->outputImage();
 	}
 
-	private function getScaleForNormalizedCoordsBbox(\OsmMetaEmitter\OsmElement\NormalizedCoordsBbox $bbox, int $margin = 4): Scale {
+	private function getScaleForNormalizedCoordsBbox(\OsmMetaEmitter\Osm\NormalizedCoordsBbox $bbox, int $margin = 4): Scale {
 		$size_to_fit_into = $this->image_size->withoutMargins(4);
 		for ($zoom = 16; $zoom >= 0; $zoom--) {
 			$scale = new Scale($zoom);

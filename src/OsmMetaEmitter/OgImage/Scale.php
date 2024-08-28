@@ -1,7 +1,7 @@
 <?php namespace OsmMetaEmitter\OgImage;
 
-use OsmMetaEmitter\OsmElement\NormalizedCoords;
-use OsmMetaEmitter\OsmElement\NormalizedCoordsBbox;
+use OsmMetaEmitter\Osm\NormalizedCoords;
+use OsmMetaEmitter\Osm\NormalizedCoordsBbox;
 
 class Scale {
 	function __construct(
