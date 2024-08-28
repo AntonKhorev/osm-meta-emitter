@@ -1,6 +1,6 @@
 <?php
 
-// requires php with gd (php, php-gd, php-curl packages)
+// requires php with gd or imagick (php, php-gd or php-imagick, php-curl packages)
 
 // use this to serve for development purposes:
 // php -S localhost:8000 router.php
@@ -33,7 +33,13 @@ $page = new OsmMetaEmitter\WebPage(
 	$settings["osm_web_url"], $settings["site_name"], $settings["site_description"]
 );
 $image_size = new OsmMetaEmitter\Image\IntPixelSize($settings["image_size_x"], $settings["image_size_y"]);
-$canvas_factory = new OsmMetaEmitter\Graphics\GdCanvasFactory;
+if ($settings["graphics_module"] == "gd") {
+	$canvas_factory = new OsmMetaEmitter\Graphics\GdCanvasFactory;
+} elseif ($settings["graphics_module"] == "imagick") {
+	$canvas_factory = new OsmMetaEmitter\Graphics\ImagickCanvasFactory;
+} else {
+	throw new Exception("unknown graphics module $settings[graphics_module]");
+}
 
 if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	$id = $match[1];

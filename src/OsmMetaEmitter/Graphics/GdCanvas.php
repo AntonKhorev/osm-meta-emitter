@@ -13,27 +13,21 @@ class GdCanvas extends Canvas {
 		imagefilledrectangle($this->image, 0, 0, $size_x, $size_y, $background_color);
 	}
 
-	function pasteImage(
-		string $src_blob,
-		int $dst_x, int $dst_y,
-		int $src_x, int $src_y,
-		int $src_size_x, int $src_size_y
-	): void {
-		$src_image = imagecreatefromstring($src_blob);
+	function pasteImage(string $blob, int $x, int $y): void {
+		$src_image = imagecreatefromstring($blob);
 		imagecopy(
 			$this->image, $src_image,
-			$dst_x, $dst_y,
-			$src_x, $src_y,
-			$src_size_x, $src_size_y
+			$x, $y, 0, 0,
+			imagesx($src_image), imagesy($src_image)
 		);
 	}
 
 	function drawCrosshair(): void {
 		$crosshair_color = imagecolorallocatealpha($this->image, 128, 128, 128, 64);
+		imageline($this->image, $this->size_x / 2 - 1, 0, $this->size_x / 2 - 1, $this->size_y - 1, $crosshair_color);
 		imageline($this->image, $this->size_x / 2, 0, $this->size_x / 2, $this->size_y - 1, $crosshair_color);
-		imageline($this->image, $this->size_x / 2 + 1, 0, $this->size_x / 2 + 1, $this->size_y - 1, $crosshair_color);
+		imageline($this->image, 0, $this->size_y / 2 - 1, $this->size_x - 1, $this->size_y / 2 - 1, $crosshair_color);
 		imageline($this->image, 0, $this->size_y / 2, $this->size_x - 1, $this->size_y / 2, $crosshair_color);
-		imageline($this->image, 0, $this->size_y / 2 + 1, $this->size_x - 1, $this->size_y / 2 + 1, $crosshair_color);
 	}
 
 	function drawPointMarker(float $x, float $y, bool $visible = true): void {
@@ -44,8 +38,8 @@ class GdCanvas extends Canvas {
 		}
 		imagecopy(
 			$this->image, $marker_image,
-			$x - imagesx($marker_image) / 2 + 1,
-			$y - imagesy($marker_image) / 2 + 1,
+			$x - imagesx($marker_image) / 2,
+			$y - imagesy($marker_image) / 2,
 			0, 0,
 			imagesx($marker_image), imagesy($marker_image)
 		);

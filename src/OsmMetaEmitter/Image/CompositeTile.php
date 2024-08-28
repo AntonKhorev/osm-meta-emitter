@@ -17,11 +17,7 @@ class CompositeTile {
 		foreach ($this->listOsmTilePlacements($this->scale) as $placement) {
 			$osm_tile_data = $fetchOsmTile($placement->path);
 			if ($osm_tile_data === null) continue;
-			$canvas->pasteImage($osm_tile_data,
-				$placement->offset->x, $placement->offset->y,
-				0, 0,
-				$this->scale->getTileSize(), $this->scale->getTileSize()
-			);
+			$canvas->pasteImage($osm_tile_data, $placement->offset->x, $placement->offset->y);
 		}
 
 		return $canvas;
