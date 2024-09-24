@@ -8,6 +8,6 @@ class Way extends Element {
 	}
 
 	function getBbox(): NormalizedCoordsBbox {
-		return $this->points->getBbox();
+		return $this->points->getBbox()->reify();
 	}
 }

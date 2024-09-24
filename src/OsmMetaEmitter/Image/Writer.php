@@ -62,6 +62,25 @@ class Writer {
 		$canvas->outputImage();
 	}
 
+	function respondWithRelationImage(\OsmMetaEmitter\Osm\Relation $relation, bool $crosshair): void {
+		$scale = new Scale(16);
+		$window = IntPixelCoordsBbox::fromCenterAndSize(
+			$scale->convertNormalizedCoordsToFloatPixelCoords($relation->getCenter()),
+			$this->image_size
+		);
+		$composite_tile = new CompositeTile($this->canvas_factory, $scale, $window);
+
+		$canvas = $composite_tile->getCanvas(
+			fn(string $path) => $this->client->fetch($this->osm_tile_url . $path, 15)
+		);
+
+		if ($crosshair) $canvas->drawCrosshair();
+
+		$canvas->drawPointMarker($this->image_size->x / 2, $this->image_size->y / 2, $relation->visible);
+
+		$canvas->outputImage();
+	}
+
 	private function getScaleForNormalizedCoordsBbox(\OsmMetaEmitter\Osm\NormalizedCoordsBbox $bbox, int $margin = 4): Scale {
 		$size_to_fit_into = $this->image_size->withoutMargins(4);
 		for ($zoom = 16; $zoom >= 0; $zoom--) {

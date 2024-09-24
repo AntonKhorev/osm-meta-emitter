@@ -16,6 +16,10 @@ class WebPage {
 		$this->respondWithElementPage("way/$id", "Way: $id");
 	}
 
+	function respondWithRelationPage(int $id): void {
+		$this->respondWithElementPage("relation/$id", "Relation: $id");
+	}
+
 	private function respondWithElementPage(string $path, string $title): void {
 		$osm_url = $this->osm_web_url . $path;
 		$image_url = $this->root_url . "$path/image.png";

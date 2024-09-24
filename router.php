@@ -61,12 +61,25 @@ if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	} catch (OsmMetaEmitter\Osm\Exception) {
 		respond_with_dummy_image();
 	}
+} elseif (preg_match("{^relations?/(\d+)/image\.png?$}", $request, $match)) {
+	$id = $match[1];
+	$loader = new OsmMetaEmitter\Osm\Loader($client, $settings["osm_api_url"]);
+	$image_writer = new OsmMetaEmitter\Image\Writer($client, $settings["osm_tile_url"], $image_size, $canvas_factory);
+	try {
+		$relation = $loader->fetchRelation($id);
+		$image_writer->respondWithRelationImage($relation, $settings["image_crosshair"]);
+	} catch (OsmMetaEmitter\Osm\Exception) {
+		respond_with_dummy_image();
+	}
 } elseif ($settings["element_pages"] && preg_match("{^nodes?/(\d+)/?$}", $request, $match)) {
 	$id = $match[1];
 	$page->respondWithNodePage($id);
 } elseif ($settings["element_pages"] && preg_match("{^ways?/(\d+)/?$}", $request, $match)) {
 	$id = $match[1];
 	$page->respondWithWayPage($id);
+} elseif ($settings["element_pages"] && preg_match("{^relations?/(\d+)/?$}", $request, $match)) {
+	$id = $match[1];
+	$page->respondWithRelationPage($id);
 } else {
 	header("HTTP/1.1 404 Not Found");
 	header("Content-Type: text/plain");
