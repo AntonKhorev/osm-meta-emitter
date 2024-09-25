@@ -38,8 +38,8 @@ class GdCanvas extends Canvas {
 		}
 		imagecopy(
 			$this->image, $marker_image,
-			$x - imagesx($marker_image) / 2,
-			$y - imagesy($marker_image) / 2,
+			round($x - imagesx($marker_image) / 2),
+			round($y - imagesy($marker_image) / 2),
 			0, 0,
 			imagesx($marker_image), imagesy($marker_image)
 		);

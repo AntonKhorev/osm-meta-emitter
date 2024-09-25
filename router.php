@@ -46,8 +46,8 @@ if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	$loader = new OsmMetaEmitter\Osm\Loader($client, $settings["osm_api_url"]);
 	$image_writer = new OsmMetaEmitter\Image\Writer($client, $settings["osm_tile_url"], $image_size, $canvas_factory);
 	try {
-		$node = $loader->fetchNode($id);
-		$image_writer->respondWithNodeImage($node, $settings["image_crosshair"]);
+		$element = $loader->fetchNode($id);
+		$image_writer->respondWithElementImage($element, $settings["image_crosshair"]);
 	} catch (OsmMetaEmitter\Osm\Exception) {
 		respond_with_dummy_image();
 	}
@@ -56,8 +56,8 @@ if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	$loader = new OsmMetaEmitter\Osm\Loader($client, $settings["osm_api_url"]);
 	$image_writer = new OsmMetaEmitter\Image\Writer($client, $settings["osm_tile_url"], $image_size, $canvas_factory);
 	try {
-		$way = $loader->fetchWay($id);
-		$image_writer->respondWithWayImage($way, $settings["image_crosshair"]);
+		$element = $loader->fetchWay($id);
+		$image_writer->respondWithElementImage($element, $settings["image_crosshair"]);
 	} catch (OsmMetaEmitter\Osm\Exception) {
 		respond_with_dummy_image();
 	}
@@ -66,8 +66,8 @@ if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	$loader = new OsmMetaEmitter\Osm\Loader($client, $settings["osm_api_url"]);
 	$image_writer = new OsmMetaEmitter\Image\Writer($client, $settings["osm_tile_url"], $image_size, $canvas_factory);
 	try {
-		$relation = $loader->fetchRelation($id);
-		$image_writer->respondWithRelationImage($relation, $settings["image_crosshair"]);
+		$element = $loader->fetchRelation($id);
+		$image_writer->respondWithElementImage($element, $settings["image_crosshair"]);
 	} catch (OsmMetaEmitter\Osm\Exception) {
 		respond_with_dummy_image();
 	}

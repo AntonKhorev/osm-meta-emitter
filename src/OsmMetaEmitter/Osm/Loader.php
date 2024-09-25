@@ -6,11 +6,11 @@ class Loader {
 		private string $osm_api_url
 	) {}
 
-	function fetchNode(int $id): Node {
+	function fetchNode(int $id): Element {
 		$data = $this->fetchElementData("nodes.json?nodes=$id");
 		if ($data === null) throw new NotAvailableException("node #$id is not available");
 		$node = $this->getNodeOrDeletionFromData($id, $data);
-		if ($node instanceof Node) {
+		if ($node instanceof Element) {
 			return $node;
 		}
 
@@ -19,7 +19,7 @@ class Loader {
 		$previous_data = $this->fetchElementData("node/$id/$previous_version.json");
 		if ($previous_data === null) throw new NotAvailableException("node #$id is not available when requesting a previous version");
 		$previous_node = $this->getNodeOrDeletionFromData($id, $previous_data);
-		if ($previous_node instanceof Node) {
+		if ($previous_node instanceof Element) {
 			$previous_node->visible = false;
 			return $previous_node;
 		}
@@ -27,22 +27,22 @@ class Loader {
 		throw new NotAvailableException("node #$id is deleted with a previous version also deleted");
 	}
 
-	function fetchWay(int $id): Way {
+	function fetchWay(int $id): Element {
 		$data = $this->fetchElementData("way/$id/full.json");
 		if ($data === null) throw new NotAvailableException("way #$id is not available");
 		$way = $this->getWayOrDeletionFromData($id, $data);
-		if ($way instanceof Way) {
+		if ($way instanceof Element) {
 			return $way;
 		}
 
 		throw new NotAvailableException("way #$id is deleted");
 	}
 
-	function fetchRelation(int $id): Relation {
+	function fetchRelation(int $id): Element {
 		$data = $this->fetchElementData("relation/$id/full.json");
 		if ($data === null) throw new NotAvailableException("relation #$id is not available");
 		$relation = $this->getRelationOrDeletionFromData($id, $data);
-		if ($relation instanceof Relation) {
+		if ($relation instanceof Element) {
 			return $relation;
 		}
 
@@ -56,7 +56,7 @@ class Loader {
 		return json_decode($response_string);
 	}
 
-	private function getNodeOrDeletionFromData(int $id, object $data): Node | Deletion {
+	private function getNodeOrDeletionFromData(int $id, object $data): Element | Deletion {
 		foreach ($data->elements as $element_data) {
 			if ($element_data->type == "node" && $element_data->id == $id) {
 				$node_data = $element_data;
@@ -65,10 +65,13 @@ class Loader {
 		if ($node_data === null) throw new InvalidDataException("no data provided for requested node #$id");
 		if (@$node_data->visible === false) return new Deletion($node_data->version);
 		$point = NormalizedCoords::fromObject($node_data);
-		return new Node($point);
+		return new Element(
+			new NormalizedCoordsList($point),
+			new NormalizedCoordsListList()
+		);
 	}
 
-	private function getWayOrDeletionFromData(int $id, object $data): Way | Deletion {
+	private function getWayOrDeletionFromData(int $id, object $data): Element | Deletion {
 		$node_points = [];
 		foreach ($data->elements as $element_data) {
 			if ($element_data->type == "node") {
@@ -80,10 +83,15 @@ class Loader {
 		if ($way_data === null) throw new InvalidDataException("no data provided for requested way #$id");
 		if (@$way_data->visible === false) return new Deletion($way_data->version);
 		$way_points = array_map(fn($node_id) => $node_points[$node_id], $way_data->nodes);
-		return new Way(new NormalizedCoordsList(...$way_points));
+		return new Element(
+			new NormalizedCoordsList(),
+			new NormalizedCoordsListList(
+				new NormalizedCoordsList(...$way_points)
+			)
+		);
 	}
 
-	private function getRelationOrDeletionFromData(int $id, object $data): Relation | Deletion {
+	private function getRelationOrDeletionFromData(int $id, object $data): Element | Deletion {
 		$nodes_data = [];
 		$ways_data = [];
 		$relations_data = [];
@@ -133,6 +141,6 @@ class Loader {
 			), $selected_ways_data)
 		);
 		// TODO check if nonempty
-		return new Relation($points, $lines);
+		return new Element($points, $lines);
 	}
 }

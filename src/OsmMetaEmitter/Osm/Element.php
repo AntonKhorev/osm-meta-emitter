@@ -1,8 +1,18 @@
 <?php namespace OsmMetaEmitter\Osm;
 
-abstract class Element {
+class Element {
 	public bool $visible = true;
 
-	abstract function getCenter(): NormalizedCoords;
-	abstract function getBbox(): NormalizedCoordsBbox;
+	function __construct(
+		public NormalizedCoordsList $points,
+		public NormalizedCoordsListList $lines
+	) {}
+
+	function getCenter(): NormalizedCoords {
+		return $this->getBbox()->getCenter();
+	}
+
+	function getBbox(): NormalizedCoordsBbox {
+		return $this->points->getBbox()->include($this->lines->getBbox())->reify();
+	}
 }
