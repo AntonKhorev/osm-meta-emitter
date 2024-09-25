@@ -9,9 +9,9 @@ class Writer {
 	) {}
 
 	function respondWithElementImage(\OsmMetaEmitter\Osm\Element $element, bool $crosshair): void {
-		$scale = $this->getScaleForNormalizedCoordsBbox($element->getBbox());
+		$scale = $this->getScaleForNormalizedCoordsBbox($element->geometry->getBbox());
 		$window = IntPixelCoordsBbox::fromCenterAndSize(
-			$scale->convertNormalizedCoordsToFloatPixelCoords($element->getCenter()),
+			$scale->convertNormalizedCoordsToFloatPixelCoords($element->geometry->getCenter()),
 			$this->image_size
 		);
 		$composite_tile = new CompositeTile($this->canvas_factory, $scale, $window);
@@ -21,30 +21,7 @@ class Writer {
 		);
 
 		if ($crosshair) $canvas->drawCrosshair();
-
-		foreach ($element->points as $point) {
-			$this->drawPointMarker($scale, $window, $canvas, $point, $element->visible);
-		}
-
-		$min_size_to_draw_lines = 8;
-		foreach ($element->lines as $line) {
-			$line_bbox = $scale->convertNormalizedCoordsBboxToFloatPixelCoordsBbox($line->getBbox()->reify());
-			if (
-				$line_bbox->getSize()->x >= $min_size_to_draw_lines ||
-				$line_bbox->getSize()->y >= $min_size_to_draw_lines
-			) {
-				$canvas->drawPolyLine(
-					array_map(
-						fn($point) => $window->getFloatOffset(
-							$scale->convertNormalizedCoordsToFloatPixelCoords($point)
-						)->toArray(),
-						iterator_to_array($line)
-					)
-				); // TODO visible state, although it's not yet supported for anything containing lines
-			} else {
-				$this->drawPointMarker($scale, $window, $canvas, $line->getBbox()->reify()->getCenter(), $element->visible);
-			}
-		}
+		$this->drawGeometry($scale, $window, $canvas, $element->visible, $element->geometry);
 
 		$canvas->outputImage();
 	}
@@ -59,11 +36,44 @@ class Writer {
 		return new Scale(0);
 	}
 
+	private function drawGeometry(
+		Scale $scale, IntPixelCoordsBbox $window,
+		\OsmMetaEmitter\Graphics\Canvas $canvas,
+		bool $visible,
+		\OsmMetaEmitter\Osm\Geometry $geometry,
+	): void {
+		if ($geometry instanceof \OsmMetaEmitter\Osm\GeometryCollection) {
+			foreach ($geometry as $sub_geometry) {
+				$this->drawGeometry($scale, $window, $canvas, $visible, $sub_geometry);
+			}
+		} elseif ($geometry instanceof \OsmMetaEmitter\Osm\Point) {
+			$this->drawPointMarker($scale, $window, $canvas, $visible, $geometry->coords);
+		} elseif ($geometry instanceof \OsmMetaEmitter\Osm\LineString) {
+			$min_size_to_draw_lines = 8;
+			$line_bbox = $scale->convertNormalizedCoordsBboxToFloatPixelCoordsBbox($geometry->getBbox());
+			if (
+				$line_bbox->getSize()->x >= $min_size_to_draw_lines ||
+				$line_bbox->getSize()->y >= $min_size_to_draw_lines
+			) {
+				$canvas->drawPolyLine(
+					array_map(
+						fn($point) => $window->getFloatOffset(
+							$scale->convertNormalizedCoordsToFloatPixelCoords($point)
+						)->toArray(),
+						$geometry->coords_array
+					)
+				); // TODO visible state, although it's not yet supported for anything containing lines
+			} else {
+				$this->drawPointMarker($scale, $window, $canvas, $visible, $geometry->getCenter());
+			}
+		}
+	}
+
 	private function drawPointMarker(
 		Scale $scale, IntPixelCoordsBbox $window,
 		\OsmMetaEmitter\Graphics\Canvas $canvas,
+		bool $visible,
 		\OsmMetaEmitter\Osm\NormalizedCoords $point,
-		bool $visible
 	): void {
 		$offset = $window->getFloatOffset(
 			$scale->convertNormalizedCoordsToFloatPixelCoords($point)

@@ -64,31 +64,24 @@ class Loader {
 		}
 		if ($node_data === null) throw new InvalidDataException("no data provided for requested node #$id");
 		if (@$node_data->visible === false) return new Deletion($node_data->version);
-		$point = NormalizedCoords::fromObject($node_data);
-		return new Element(
-			new NormalizedCoordsList($point),
-			new NormalizedCoordsListList()
-		);
+		$point = new Point(NormalizedCoords::fromObject($node_data));
+		return new Element($point);
 	}
 
 	private function getWayOrDeletionFromData(int $id, object $data): Element | Deletion {
-		$node_points = [];
+		$node_coords = [];
 		foreach ($data->elements as $element_data) {
 			if ($element_data->type == "node") {
-				$node_points[$element_data->id] = NormalizedCoords::fromObject($element_data);
+				$node_coords[$element_data->id] = NormalizedCoords::fromObject($element_data);
 			} elseif ($element_data->type == "way" && $element_data->id == $id) {
 				$way_data = $element_data;
 			}
 		}
 		if ($way_data === null) throw new InvalidDataException("no data provided for requested way #$id");
 		if (@$way_data->visible === false) return new Deletion($way_data->version);
-		$way_points = array_map(fn($node_id) => $node_points[$node_id], $way_data->nodes);
-		return new Element(
-			new NormalizedCoordsList(),
-			new NormalizedCoordsListList(
-				new NormalizedCoordsList(...$way_points)
-			)
-		);
+		$way_coords = array_map(fn($node_id) => $node_coords[$node_id], $way_data->nodes);
+		$line = new LineString(...$way_coords);
+		return new Element($line);
 	}
 
 	private function getRelationOrDeletionFromData(int $id, object $data): Element | Deletion {
@@ -122,25 +115,25 @@ class Loader {
 				$selected_ways_data[$id] = $ways_data[$id];
 			} elseif ($type == "relation" && @$relations_data[$id] && @!$visited_relations[$id]) {
 				$visited_relations[$id] = true;
-				foreach ($relations_data[$id]->members as $member_data) {
-					$select_elements_data($member_data->type, $member_data->ref, $depth + 1);
+				if (@$relations_data[$id]->members) {
+					foreach ($relations_data[$id]->members as $member_data) {
+						$select_elements_data($member_data->type, $member_data->ref, $depth + 1);
+					}
 				}
 			}
 		};
 		$select_elements_data("relation", $id, 0);
 
-		$points = new NormalizedCoordsList(
-			...array_map(fn($node_data) => NormalizedCoords::fromObject($node_data), $selected_nodes_data)
-		);
-		$lines = new NormalizedCoordsListList(
-			...array_map(fn($way_data) => new NormalizedCoordsList(
-				...array_map(
-					fn($node_id) => NormalizedCoords::fromObject($nodes_data[$node_id]),
-					$way_data->nodes
-				)
-			), $selected_ways_data)
-		);
-		// TODO check if nonempty
-		return new Element($points, $lines);
+		$points = array_map(fn($node_data) => new Point(
+			NormalizedCoords::fromObject($node_data)
+		), $selected_nodes_data);
+		$lines = array_map(fn($way_data) => new LineString(
+			...array_map(
+				fn($node_id) => NormalizedCoords::fromObject($nodes_data[$node_id]),
+				$way_data->nodes
+			)
+		), $selected_ways_data);
+		$geometry = new GeometryCollection(...$points, ...$lines);
+		return new Element($geometry);
 	}
 }
