@@ -5,10 +5,11 @@ class Writer {
 		private HttpClient $client,
 		private string $osm_tile_url,
 		private IntPixelSize $image_size,
-		private \OsmMetaEmitter\Graphics\CanvasFactory $canvas_factory
+		private \OsmMetaEmitter\Graphics\CanvasFactory $canvas_factory,
+		private bool $crosshair
 	) {}
 
-	function respondWithElementImage(\OsmMetaEmitter\Osm\Element $element, bool $crosshair): void {
+	function respondWithElementImage(\OsmMetaEmitter\Osm\Element $element): void {
 		$scale = $this->getScaleForNormalizedCoordsBbox($element->geometry->getBbox());
 		$window = IntPixelCoordsBbox::fromCenterAndSize(
 			$scale->convertNormalizedCoordsToFloatPixelCoords($element->geometry->getCenter()),
@@ -20,7 +21,7 @@ class Writer {
 			fn(string $path) => $this->client->fetch($this->osm_tile_url . $path, 15)
 		);
 
-		if ($crosshair) $canvas->drawCrosshair();
+		if ($this->crosshair) $canvas->drawCrosshair();
 		$this->drawGeometry($scale, $window, $canvas, $element->visible, $element->geometry);
 
 		$canvas->outputImage();

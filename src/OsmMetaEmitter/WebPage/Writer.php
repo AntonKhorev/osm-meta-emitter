@@ -1,6 +1,6 @@
-<?php namespace OsmMetaEmitter;
+<?php namespace OsmMetaEmitter\WebPage;
 
-class WebPage {
+class Writer {
 	function __construct(
 		private string $root_url,
 		private string $osm_web_url,

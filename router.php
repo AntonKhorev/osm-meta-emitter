@@ -28,10 +28,9 @@ if (substr($_SERVER['REQUEST_URI'], 0, strlen($root)) == $root) {
 }
 
 $client = new OsmMetaEmitter\HttpClient($settings["osm_tile_url"], $settings["log_http_requests"]);
-$page = new OsmMetaEmitter\WebPage(
-	(@$_SERVER['HTTPS'] ? "https" : "http") . "://$_SERVER[HTTP_HOST]${root}",
-	$settings["osm_web_url"], $settings["site_name"], $settings["site_description"]
-);
+
+$loader = new OsmMetaEmitter\Osm\ApiLoader($client, $settings["osm_api_url"]);
+
 $image_size = new OsmMetaEmitter\Image\IntPixelSize($settings["image_size_x"], $settings["image_size_y"]);
 if ($settings["graphics_module"] == "gd") {
 	$canvas_factory = new OsmMetaEmitter\Graphics\GdCanvasFactory;
@@ -40,55 +39,16 @@ if ($settings["graphics_module"] == "gd") {
 } else {
 	throw new Exception("unknown graphics module $settings[graphics_module]");
 }
+$image_writer = new OsmMetaEmitter\Image\Writer($client, $settings["osm_tile_url"], $image_size, $canvas_factory, $settings["image_crosshair"]);
 
-if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
-	$id = $match[1];
-	$loader = new OsmMetaEmitter\Osm\ApiLoader($client, $settings["osm_api_url"]);
-	$image_writer = new OsmMetaEmitter\Image\Writer($client, $settings["osm_tile_url"], $image_size, $canvas_factory);
-	try {
-		$element = $loader->fetchNode($id);
-		$image_writer->respondWithElementImage($element, $settings["image_crosshair"]);
-	} catch (OsmMetaEmitter\Osm\Exception) {
-		respond_with_dummy_image();
-	}
-} elseif (preg_match("{^ways?/(\d+)/image\.png?$}", $request, $match)) {
-	$id = $match[1];
-	$loader = new OsmMetaEmitter\Osm\ApiLoader($client, $settings["osm_api_url"]);
-	$image_writer = new OsmMetaEmitter\Image\Writer($client, $settings["osm_tile_url"], $image_size, $canvas_factory);
-	try {
-		$element = $loader->fetchWay($id);
-		$image_writer->respondWithElementImage($element, $settings["image_crosshair"]);
-	} catch (OsmMetaEmitter\Osm\Exception) {
-		respond_with_dummy_image();
-	}
-} elseif (preg_match("{^relations?/(\d+)/image\.png?$}", $request, $match)) {
-	$id = $match[1];
-	$loader = new OsmMetaEmitter\Osm\ApiLoader($client, $settings["osm_api_url"]);
-	$image_writer = new OsmMetaEmitter\Image\Writer($client, $settings["osm_tile_url"], $image_size, $canvas_factory);
-	try {
-		$element = $loader->fetchRelation($id);
-		$image_writer->respondWithElementImage($element, $settings["image_crosshair"]);
-	} catch (OsmMetaEmitter\Osm\Exception) {
-		respond_with_dummy_image();
-	}
-} elseif ($settings["element_pages"] && preg_match("{^nodes?/(\d+)/?$}", $request, $match)) {
-	$id = $match[1];
-	$page->respondWithNodePage($id);
-} elseif ($settings["element_pages"] && preg_match("{^ways?/(\d+)/?$}", $request, $match)) {
-	$id = $match[1];
-	$page->respondWithWayPage($id);
-} elseif ($settings["element_pages"] && preg_match("{^relations?/(\d+)/?$}", $request, $match)) {
-	$id = $match[1];
-	$page->respondWithRelationPage($id);
+if ($settings["element_pages"]) {
+	$web_page_writer = new OsmMetaEmitter\WebPage\Writer(
+		(@$_SERVER['HTTPS'] ? "https" : "http") . "://$_SERVER[HTTP_HOST]${root}",
+		$settings["osm_web_url"], $settings["site_name"], $settings["site_description"]
+	);
 } else {
-	header("HTTP/1.1 404 Not Found");
-	header("Content-Type: text/plain");
-	echo "not found\n";
+	$web_page_writer = null;
 }
 
-function respond_with_dummy_image(): void {
-	global $settings;
-
-	header("Content-Type: image/png");
-	readfile($settings["site_logo"]);
-}
+$router = new OsmMetaEmitter\Router($loader, $image_writer, $web_page_writer, $settings["site_logo"]);
+$router->route($request);
