@@ -43,7 +43,7 @@ if ($settings["graphics_module"] == "gd") {
 
 if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	$id = $match[1];
-	$loader = new OsmMetaEmitter\Osm\Loader($client, $settings["osm_api_url"]);
+	$loader = new OsmMetaEmitter\Osm\ApiLoader($client, $settings["osm_api_url"]);
 	$image_writer = new OsmMetaEmitter\Image\Writer($client, $settings["osm_tile_url"], $image_size, $canvas_factory);
 	try {
 		$element = $loader->fetchNode($id);
@@ -53,7 +53,7 @@ if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	}
 } elseif (preg_match("{^ways?/(\d+)/image\.png?$}", $request, $match)) {
 	$id = $match[1];
-	$loader = new OsmMetaEmitter\Osm\Loader($client, $settings["osm_api_url"]);
+	$loader = new OsmMetaEmitter\Osm\ApiLoader($client, $settings["osm_api_url"]);
 	$image_writer = new OsmMetaEmitter\Image\Writer($client, $settings["osm_tile_url"], $image_size, $canvas_factory);
 	try {
 		$element = $loader->fetchWay($id);
@@ -63,7 +63,7 @@ if (preg_match("{^nodes?/(\d+)/image\.png?$}", $request, $match)) {
 	}
 } elseif (preg_match("{^relations?/(\d+)/image\.png?$}", $request, $match)) {
 	$id = $match[1];
-	$loader = new OsmMetaEmitter\Osm\Loader($client, $settings["osm_api_url"]);
+	$loader = new OsmMetaEmitter\Osm\ApiLoader($client, $settings["osm_api_url"]);
 	$image_writer = new OsmMetaEmitter\Image\Writer($client, $settings["osm_tile_url"], $image_size, $canvas_factory);
 	try {
 		$element = $loader->fetchRelation($id);
