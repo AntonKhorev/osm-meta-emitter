@@ -1,6 +1,6 @@
 <?php
 
-// requires php with gd or imagick (php, php-gd or php-imagick, php-curl packages)
+// requires php with gd or imagick (php, php-gd or php-imagick, php-curl packages and php-pgsql if db loader is used)
 
 // use this to serve for development purposes:
 // php -S localhost:8000 router.php
@@ -29,7 +29,13 @@ if (substr($_SERVER['REQUEST_URI'], 0, strlen($root)) == $root) {
 
 $client = new OsmMetaEmitter\HttpClient($settings["osm_tile_url"], $settings["log_http_requests"]);
 
-$loader = new OsmMetaEmitter\Osm\ApiLoader($client, $settings["osm_api_url"]);
+if ($settings["osm_loader"] == "api") {
+	$loader = new OsmMetaEmitter\Osm\ApiLoader($client, $settings["osm_api_url"]);
+} elseif ($settings["osm_loader"] == "db") {
+	$loader = new OsmMetaEmitter\Osm\DbLoader($settings["db_dsn"], $settings["db_user"], $settings["db_password"]);
+} else {
+	throw new Exception("unknown osm data loader $settings[osm_loader]");
+}
 
 $image_size = new OsmMetaEmitter\Image\IntPixelSize($settings["image_size_x"], $settings["image_size_y"]);
 if ($settings["graphics_module"] == "gd") {
