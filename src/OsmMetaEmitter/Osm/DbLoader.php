@@ -26,6 +26,7 @@ class DbLoader extends Loader {
 		$sth = $dbh->prepare("SELECT latitude, longitude FROM current_nodes WHERE id = :id");
 		$sth->execute(["id" => $id]);
 		$node_row = $sth->fetch();
+		if (!$node_row) throw new NotAvailableException("node #$id is not available");
 		$lat = $node_row["latitude"] / DB_COORDS_SCALE;
 		$lon = $node_row["longitude"] / DB_COORDS_SCALE;
 		$point = new Point(NormalizedCoords::fromLatLon($lat, $lon));
