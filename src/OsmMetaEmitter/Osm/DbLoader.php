@@ -6,7 +6,7 @@ Create a user on an osm database:
 
 	psql -d openstreetmap
 	CREATE USER osm_meta_emitter WITH PASSWORD 'osm_meta_emitter_password';
-	GRANT SELECT ON nodes, current_nodes TO osm_meta_emitter;
+	GRANT SELECT ON nodes, current_nodes, current_ways, current_way_nodes TO osm_meta_emitter;
 
 \du shows user list with the new user
 
@@ -41,7 +41,20 @@ class DbLoader extends Loader {
 	}
 
 	function fetchWay(int $id): Element {
-		throw new Exception("way fetching not implemented");
+		$dbh = $this->connect();
+		$sth = $dbh->prepare("SELECT visible FROM current_ways WHERE id = :id AND visible");
+		$sth->execute(["id" => $id]);
+		$way_row = $sth->fetch();
+		if (!$way_row) throw new NotAvailableException("way #$id is not available");
+		$sth = $dbh->prepare("SELECT latitude, longitude, visible FROM current_way_nodes JOIN current_nodes ON node_id = id WHERE way_id = :id ORDER BY sequence_id");
+		$sth->execute(["id" => $id]);
+		$way_coords = [];
+		while ($node_row = $sth->fetch()) {
+			if (!$node_row["visible"]) throw new NotAvailableException("way #$id contains invisible nodes");
+			$way_coords[] = $this->makeNormalizedCoordsFromRow($node_row);
+		}
+		$line = new LineString(...$way_coords);
+		return new Element($line);
 	}
 
 	function fetchRelation(int $id): Element {
@@ -53,9 +66,13 @@ class DbLoader extends Loader {
 	}
 
 	private function makeNodeFromRow(array $row): Element {
+		$point = new Point($this->makeNormalizedCoordsFromRow($row));
+		return new Element($point);
+	}
+
+	private function makeNormalizedCoordsFromRow(array $row): NormalizedCoords {
 		$lat = $row["latitude"] / DB_COORDS_SCALE;
 		$lon = $row["longitude"] / DB_COORDS_SCALE;
-		$point = new Point(NormalizedCoords::fromLatLon($lat, $lon));
-		return new Element($point);
+		return NormalizedCoords::fromLatLon($lat, $lon);
 	}
 }
