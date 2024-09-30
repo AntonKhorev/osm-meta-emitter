@@ -6,7 +6,7 @@ Create a user on an osm database:
 
 	psql -d openstreetmap
 	CREATE USER osm_meta_emitter WITH PASSWORD 'osm_meta_emitter_password';
-	GRANT SELECT ON nodes, current_nodes, current_ways, current_way_nodes TO osm_meta_emitter;
+	GRANT SELECT ON nodes, current_nodes, current_ways, current_way_nodes, current_relations, current_relation_members TO osm_meta_emitter;
 
 \du shows user list with the new user
 
@@ -23,7 +23,11 @@ class DbLoader extends Loader {
 
 	function fetchNode(int $id): Element {
 		$dbh = $this->connect();
-		$sth = $dbh->prepare("SELECT latitude, longitude, visible, version FROM current_nodes WHERE id = :id");
+		$sth = $dbh->prepare("
+			SELECT latitude, longitude, visible, version
+			FROM current_nodes
+			WHERE id = :id
+		");
 		$sth->execute(["id" => $id]);
 		$node_row = $sth->fetch();
 		if (!$node_row) throw new NotAvailableException("node #$id is not available");
@@ -31,7 +35,11 @@ class DbLoader extends Loader {
 
 		// deleted node may have latitude and longitude but we can't use them because they could be redacted
 		$previous_version = $node_row["version"] - 1;
-		$sth = $dbh->prepare("SELECT latitude, longitude, visible FROM nodes WHERE node_id = :id AND version = :version AND visible AND redaction_id IS NULL");
+		$sth = $dbh->prepare("
+			SELECT latitude, longitude, visible
+			FROM nodes
+			WHERE node_id = :id AND version = :version AND visible AND redaction_id IS NULL
+		");
 		$sth->execute(["id" => $id, "version" => $previous_version]);
 		$node_row = $sth->fetch();
 		if (!$node_row) throw new NotAvailableException("node #$id is not available when requesting a previous version");
@@ -46,11 +54,17 @@ class DbLoader extends Loader {
 		$sth->execute(["id" => $id]);
 		$way_row = $sth->fetch();
 		if (!$way_row) throw new NotAvailableException("way #$id is not available");
-		$sth = $dbh->prepare("SELECT latitude, longitude, visible FROM current_way_nodes JOIN current_nodes ON node_id = id WHERE way_id = :id ORDER BY sequence_id");
+
+		$sth = $dbh->prepare("
+			SELECT latitude, longitude, visible
+			FROM current_way_nodes JOIN current_nodes ON node_id = id
+			WHERE way_id = :id
+			ORDER BY sequence_id
+		");
 		$sth->execute(["id" => $id]);
 		$way_coords = [];
 		while ($node_row = $sth->fetch()) {
-			if (!$node_row["visible"]) throw new NotAvailableException("way #$id contains invisible nodes");
+			if (!$node_row["visible"]) throw new InvisibleMemberException("way #$id contains invisible nodes");
 			$way_coords[] = $this->makeNormalizedCoordsFromRow($node_row);
 		}
 		$line = new LineString(...$way_coords);
@@ -58,7 +72,25 @@ class DbLoader extends Loader {
 	}
 
 	function fetchRelation(int $id): Element {
-		throw new Exception("relation fetching not implemented");
+		$dbh = $this->connect();
+		$sth = $dbh->prepare("SELECT visible FROM current_relations WHERE id = :id AND visible");
+		$sth->execute(["id" => $id]);
+		$relation_row = $sth->fetch();
+		if (!$relation_row) throw new NotAvailableException("relation #$id is not available");
+
+		$sth = $dbh->prepare("
+			SELECT latitude, longitude, visible
+			FROM current_relation_members JOIN current_nodes ON member_id = id
+			WHERE relation_id = :id AND member_type = 'Node'
+		");
+		$sth->execute(["id" => $id]);
+		$points = [];
+		while ($node_row = $sth->fetch()) {
+			if (!$node_row["visible"]) throw new InvisibleMemberException("relation #$id contains invisible nodes");
+			$points[] = new Point($this->makeNormalizedCoordsFromRow($node_row));
+		}
+		$geometry = new GeometryCollection(...$points);
+		return new Element($geometry);
 	}
 
 	private function connect(): \PDO {
