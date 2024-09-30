@@ -89,12 +89,53 @@ class DbLoader extends Loader {
 			if (!$node_row["visible"]) throw new InvisibleMemberException("relation #$id contains invisible nodes");
 			$points[] = new Point($this->makeNormalizedCoordsFromRow($node_row));
 		}
-		$geometry = new GeometryCollection(...$points);
+
+		$sth = $dbh->prepare("
+			SELECT id, visible
+			FROM current_relation_members JOIN current_ways ON member_id = id
+			WHERE relation_id = :id AND member_type = 'Way'
+		");
+		$sth->execute(["id" => $id]);
+		$way_ids = [];
+		while ($way_row = $sth->fetch()) {
+			if (!$way_row["visible"]) throw new InvisibleMemberException("relation #$id contains invisible way #$way_row[id]");
+			$way_ids[] = $way_row["id"];
+		}
+		$lines = $this->loadWayLines($dbh, $id, $way_ids);
+
+		$geometry = new GeometryCollection(...$points, ...$lines);
 		return new Element($geometry);
 	}
 
 	private function connect(): \PDO {
 		return new \PDO($this->dsn, $this->user, $this->password, [\PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC]);
+	}
+
+	private function loadWayLines(\PDO $dbh, int $id, array $way_ids): array {
+		if (count($way_ids) <= 0) return [];
+
+		$in_placeholders = str_repeat("?,", count($way_ids) - 1) . "?";
+		$sth = $dbh->prepare("
+			SELECT latitude, longitude, visible, way_id
+			FROM current_way_nodes JOIN current_nodes ON node_id = id
+			WHERE way_id IN ($in_placeholders)
+			ORDER BY way_id, sequence_id
+		");
+		$sth->execute($way_ids);
+		$lines = [];
+		$line_coords = [];
+		$line_way_id = null;
+		while ($node_row = $sth->fetch()) {
+			if (!$node_row["visible"]) throw new InvisibleMemberException("relation #$id contains way #$node_row[way_id] with invisible nodes");
+			if ($line_way_id !== $node_row["way_id"]) {
+				if ($line_way_id !== null) $lines[] = new LineString(...$line_coords);
+				$line_coords = [];
+				$line_way_id = $node_row["way_id"];
+			}
+			$line_coords[] = $this->makeNormalizedCoordsFromRow($node_row);
+		}
+		$lines[] = new LineString(...$line_coords);
+		return $lines;
 	}
 
 	private function makeNodeFromRow(array $row): Element {
