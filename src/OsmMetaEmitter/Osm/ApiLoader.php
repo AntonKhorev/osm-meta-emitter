@@ -65,7 +65,7 @@ class ApiLoader extends Loader {
 		if ($node_data === null) throw new InvalidDataException("no data provided for requested node #$id");
 		if (@$node_data->visible === false) return new Deletion($node_data->version);
 		$point = new Point(NormalizedCoords::fromObject($node_data));
-		return new Element($point);
+		return new Element($point, $this->getMaxZoomFromTags(@$node_data->tags));
 	}
 
 	private function getWayOrDeletionFromData(int $id, object $data): Element | Deletion {
@@ -135,5 +135,12 @@ class ApiLoader extends Loader {
 		), $selected_ways_data);
 		$geometry = new GeometryCollection(...$points, ...$lines);
 		return new Element($geometry);
+	}
+
+	private function getMaxZoomFromTags(?object $tags): int {
+		if (!$tags) return Element::DEFAULT_MAX_ZOOM;
+		// https://github.com/gravitystorm/openstreetmap-carto/blob/23b1cfa7284ac91bb78390fa4cb7f1c2c6350b92/style/amenity-points.mss#L84
+		if (in_array($tags->amenity, ["biergarten", "cafe", "fast_food", "food_court", "ice_cream", "pub", "restaurant"])) return 18;
+		return Element::DEFAULT_MAX_ZOOM;
 	}
 }

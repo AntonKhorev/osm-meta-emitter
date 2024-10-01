@@ -10,7 +10,7 @@ class Writer {
 	) {}
 
 	function respondWithElementImage(\OsmMetaEmitter\Osm\Element $element): void {
-		$scale = $this->getScaleForNormalizedCoordsBbox($element->geometry->getBbox());
+		$scale = $this->getScaleForElement($element);
 		$window = IntPixelCoordsBbox::fromCenterAndSize(
 			$scale->convertNormalizedCoordsToFloatPixelCoords($element->geometry->getCenter()),
 			$this->image_size
@@ -27,9 +27,10 @@ class Writer {
 		$canvas->outputImage();
 	}
 
-	private function getScaleForNormalizedCoordsBbox(\OsmMetaEmitter\Osm\NormalizedCoordsBbox $bbox, int $margin = 4): Scale {
+	private function getScaleForElement(\OsmMetaEmitter\Osm\Element $element, int $margin = 4): Scale {
+		$bbox = $element->geometry->getBbox();
 		$size_to_fit_into = $this->image_size->withoutMargins($margin);
-		for ($zoom = 16; $zoom >= 0; $zoom--) {
+		for ($zoom = $element->max_zoom; $zoom >= 0; $zoom--) {
 			$scale = new Scale($zoom);
 			$pixel_bbox = $scale->convertNormalizedCoordsBboxToFloatPixelCoordsBbox($bbox)->toInt();
 			if ($pixel_bbox->getSize()->fitsInto($size_to_fit_into)) return $scale;
