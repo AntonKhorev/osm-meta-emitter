@@ -34,7 +34,7 @@ class DbLoader extends Loader {
 		if ($node_row["visible"]) {
 			return new Element(
 				new Point($this->makeNormalizedCoordsFromRow($node_row)),
-				$this->loadMaxZoom($dbh, "node", $id)
+				$this->loadTags($dbh, "node", $id)
 			);
 		}
 
@@ -50,7 +50,7 @@ class DbLoader extends Loader {
 		if (!$node_row) throw new NotAvailableException("node #$id is not available when requesting a previous version");
 		$node = new Element(
 			new Point($this->makeNormalizedCoordsFromRow($node_row)),
-			$this->loadMaxZoom($dbh, "node", $id, $previous_version)
+			$this->loadTags($dbh, "node", $id, $previous_version)
 		);
 		$node->visible = false;
 		return $node;
@@ -77,7 +77,7 @@ class DbLoader extends Loader {
 		}
 		return new Element(
 			new LineString(...$way_coords),
-			$this->loadMaxZoom($dbh, "way", $id)
+			$this->loadTags($dbh, "way", $id)
 		);
 	}
 
@@ -115,7 +115,7 @@ class DbLoader extends Loader {
 
 		return new Element(
 			new GeometryCollection(...$points, ...$lines),
-			$this->loadMaxZoom($dbh, "relation", $id)
+			$this->loadTags($dbh, "relation", $id)
 		);
 	}
 
@@ -150,21 +150,25 @@ class DbLoader extends Loader {
 		return $lines;
 	}
 
-	private function loadMaxZoom(\PDO $dbh, string $type, int $id, ?int $version = null): int {
+	private function loadTags(\PDO $dbh, string $type, int $id, ?int $version = null): object {
 		$table_name = $type . "_tags";
 		$element_condition = $type . "_id = :id";
-		$bindings = ["id" => $id];
+		$params = ["id" => $id];
 		if ($version !== null) {
 			$element_condition .= " AND version = :version";
-			$bindings["version"] = $version;
+			$params["version"] = $version;
 		} else {
 			$table_name = "current_" . $table_name;
 		}
-		$sth = $dbh->prepare("SELECT v FROM $table_name WHERE $element_condition AND k = 'amenity'");
-		$sth->execute($bindings);
-		$row = $sth->fetch();
-		if (in_array(@$row['v'], Element::AMENITY_MAX_ZOOM_TAG_VALUES)) return Element::AMENITY_MAX_ZOOM;
-		return Element::DEFAULT_MAX_ZOOM;
+		$sth = $dbh->prepare("SELECT k, v FROM $table_name WHERE $element_condition");
+		$sth->bindColumn("k", $k);
+		$sth->bindColumn("v", $v);
+		$sth->execute($params);
+		$tags = new \stdClass;
+		while ($sth->fetch(\PDO::FETCH_BOUND)) {
+			$tags->$k = $v;
+		}
+		return $tags;
 	}
 
 	private function makeNodeFromRow(array $row): Element {
