@@ -141,8 +141,7 @@ class ApiLoader extends Loader {
 
 	private function getMaxZoomFromTags(?object $tags): int {
 		if (!$tags) return Element::DEFAULT_MAX_ZOOM;
-		// https://github.com/gravitystorm/openstreetmap-carto/blob/23b1cfa7284ac91bb78390fa4cb7f1c2c6350b92/style/amenity-points.mss#L84
-		if (in_array($tags->amenity, ["biergarten", "cafe", "fast_food", "food_court", "ice_cream", "pub", "restaurant"])) return 18;
+		if (in_array($tags->amenity, Element::AMENITY_MAX_ZOOM_TAG_VALUES)) return Element::AMENITY_MAX_ZOOM;
 		return Element::DEFAULT_MAX_ZOOM;
 	}
 }

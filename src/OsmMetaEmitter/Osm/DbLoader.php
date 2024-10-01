@@ -6,7 +6,7 @@ Create a user on an osm database:
 
 	psql -d openstreetmap
 	CREATE USER osm_meta_emitter WITH PASSWORD 'osm_meta_emitter_password';
-	GRANT SELECT ON nodes, current_nodes, current_ways, current_way_nodes, current_relations, current_relation_members TO osm_meta_emitter;
+	GRANT SELECT ON nodes, current_nodes, current_node_tags, current_ways, current_way_nodes, current_relations, current_relation_members TO osm_meta_emitter;
 
 \du shows user list with the new user
 
@@ -31,7 +31,19 @@ class DbLoader extends Loader {
 		$sth->execute(["id" => $id]);
 		$node_row = $sth->fetch();
 		if (!$node_row) throw new NotAvailableException("node #$id is not available");
-		if ($node_row["visible"]) return $this->makeNodeFromRow($node_row);
+		if ($node_row["visible"]) {
+			$point = new Point($this->makeNormalizedCoordsFromRow($node_row));
+			$sth = $dbh->prepare("
+				SELECT v
+				FROM current_node_tags
+				WHERE node_id = :id AND k = 'amenity'
+			");
+			$sth->execute(["id" => $id]);
+			$amenity_tag_row = $sth->fetch();
+			$max_zoom = Element::DEFAULT_MAX_ZOOM;
+			if (in_array(@$amenity_tag_row['v'], Element::AMENITY_MAX_ZOOM_TAG_VALUES)) $max_zoom = Element::AMENITY_MAX_ZOOM;
+			return new Element($point, $max_zoom);
+		}
 
 		// deleted node may have latitude and longitude but we can't use them because they could be redacted
 		$previous_version = $node_row["version"] - 1;
@@ -43,7 +55,8 @@ class DbLoader extends Loader {
 		$sth->execute(["id" => $id, "version" => $previous_version]);
 		$node_row = $sth->fetch();
 		if (!$node_row) throw new NotAvailableException("node #$id is not available when requesting a previous version");
-		$node = $this->makeNodeFromRow($node_row);
+		$point = new Point($this->makeNormalizedCoordsFromRow($node_row));
+		$node = new Element($point);
 		$node->visible = false;
 		return $node;
 	}
