@@ -6,7 +6,7 @@ Create a user on an osm database:
 
 	psql -d openstreetmap
 	CREATE USER osm_meta_emitter WITH PASSWORD 'osm_meta_emitter_password';
-	GRANT SELECT ON nodes, current_nodes, current_node_tags, current_ways, current_way_nodes, current_relations, current_relation_members TO osm_meta_emitter;
+	GRANT SELECT ON nodes, node_tags, current_nodes, current_node_tags, current_ways, current_way_nodes, current_relations, current_relation_members TO osm_meta_emitter;
 
 \du shows user list with the new user
 
@@ -39,9 +39,7 @@ class DbLoader extends Loader {
 				WHERE node_id = :id AND k = 'amenity'
 			");
 			$sth->execute(["id" => $id]);
-			$amenity_tag_row = $sth->fetch();
-			$max_zoom = Element::DEFAULT_MAX_ZOOM;
-			if (in_array(@$amenity_tag_row['v'], Element::AMENITY_MAX_ZOOM_TAG_VALUES)) $max_zoom = Element::AMENITY_MAX_ZOOM;
+			$max_zoom = $this->getMaxZoomFromAmenityTagRow($sth->fetch());
 			return new Element($point, $max_zoom);
 		}
 
@@ -56,7 +54,14 @@ class DbLoader extends Loader {
 		$node_row = $sth->fetch();
 		if (!$node_row) throw new NotAvailableException("node #$id is not available when requesting a previous version");
 		$point = new Point($this->makeNormalizedCoordsFromRow($node_row));
-		$node = new Element($point);
+		$sth = $dbh->prepare("
+			SELECT v
+			FROM node_tags
+			WHERE node_id = :id AND version = :version AND k = 'amenity'
+		");
+		$sth->execute(["id" => $id, "version" => $previous_version]);
+		$max_zoom = $this->getMaxZoomFromAmenityTagRow($sth->fetch());
+		$node = new Element($point, $max_zoom);
 		$node->visible = false;
 		return $node;
 	}
@@ -160,5 +165,10 @@ class DbLoader extends Loader {
 		$lat = $row["latitude"] / DB_COORDS_SCALE;
 		$lon = $row["longitude"] / DB_COORDS_SCALE;
 		return NormalizedCoords::fromLatLon($lat, $lon);
+	}
+
+	private function getMaxZoomFromAmenityTagRow(array|false $row): int {
+		if (in_array(@$row['v'], Element::AMENITY_MAX_ZOOM_TAG_VALUES)) return Element::AMENITY_MAX_ZOOM;
+		return Element::DEFAULT_MAX_ZOOM;
 	}
 }
