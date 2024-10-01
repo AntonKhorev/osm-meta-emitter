@@ -6,7 +6,7 @@ Create a user on an osm database:
 
 	psql -d openstreetmap
 	CREATE USER osm_meta_emitter WITH PASSWORD 'osm_meta_emitter_password';
-	GRANT SELECT ON nodes, node_tags, current_nodes, current_node_tags, current_ways, current_way_nodes, current_way_tags, current_relations, current_relation_members TO osm_meta_emitter;
+	GRANT SELECT ON nodes, node_tags, current_nodes, current_node_tags, current_ways, current_way_nodes, current_way_tags, current_relations, current_relation_members, current_relation_tags TO osm_meta_emitter;
 
 \du shows user list with the new user
 
@@ -113,8 +113,10 @@ class DbLoader extends Loader {
 		}
 		$lines = $this->loadWayLines($dbh, $id, $way_ids);
 
-		$geometry = new GeometryCollection(...$points, ...$lines);
-		return new Element($geometry);
+		return new Element(
+			new GeometryCollection(...$points, ...$lines),
+			$this->loadMaxZoom($dbh, "relation", $id)
+		);
 	}
 
 	private function connect(): \PDO {
