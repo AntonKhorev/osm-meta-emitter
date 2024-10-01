@@ -6,7 +6,7 @@ Create a user on an osm database:
 
 	psql -d openstreetmap
 	CREATE USER osm_meta_emitter WITH PASSWORD 'osm_meta_emitter_password';
-	GRANT SELECT ON nodes, node_tags, current_nodes, current_node_tags, current_ways, current_way_nodes, current_relations, current_relation_members TO osm_meta_emitter;
+	GRANT SELECT ON nodes, node_tags, current_nodes, current_node_tags, current_ways, current_way_nodes, current_way_tags, current_relations, current_relation_members TO osm_meta_emitter;
 
 \du shows user list with the new user
 
@@ -32,15 +32,10 @@ class DbLoader extends Loader {
 		$node_row = $sth->fetch();
 		if (!$node_row) throw new NotAvailableException("node #$id is not available");
 		if ($node_row["visible"]) {
-			$point = new Point($this->makeNormalizedCoordsFromRow($node_row));
-			$sth = $dbh->prepare("
-				SELECT v
-				FROM current_node_tags
-				WHERE node_id = :id AND k = 'amenity'
-			");
-			$sth->execute(["id" => $id]);
-			$max_zoom = $this->getMaxZoomFromAmenityTagRow($sth->fetch());
-			return new Element($point, $max_zoom);
+			return new Element(
+				new Point($this->makeNormalizedCoordsFromRow($node_row)),
+				$this->loadMaxZoom($dbh, "node", $id)
+			);
 		}
 
 		// deleted node may have latitude and longitude but we can't use them because they could be redacted
@@ -53,15 +48,10 @@ class DbLoader extends Loader {
 		$sth->execute(["id" => $id, "version" => $previous_version]);
 		$node_row = $sth->fetch();
 		if (!$node_row) throw new NotAvailableException("node #$id is not available when requesting a previous version");
-		$point = new Point($this->makeNormalizedCoordsFromRow($node_row));
-		$sth = $dbh->prepare("
-			SELECT v
-			FROM node_tags
-			WHERE node_id = :id AND version = :version AND k = 'amenity'
-		");
-		$sth->execute(["id" => $id, "version" => $previous_version]);
-		$max_zoom = $this->getMaxZoomFromAmenityTagRow($sth->fetch());
-		$node = new Element($point, $max_zoom);
+		$node = new Element(
+			new Point($this->makeNormalizedCoordsFromRow($node_row)),
+			$this->loadMaxZoom($dbh, "node", $id, $previous_version)
+		);
 		$node->visible = false;
 		return $node;
 	}
@@ -85,8 +75,10 @@ class DbLoader extends Loader {
 			if (!$node_row["visible"]) throw new InvisibleMemberException("way #$id contains invisible nodes");
 			$way_coords[] = $this->makeNormalizedCoordsFromRow($node_row);
 		}
-		$line = new LineString(...$way_coords);
-		return new Element($line);
+		return new Element(
+			new LineString(...$way_coords),
+			$this->loadMaxZoom($dbh, "way", $id)
+		);
 	}
 
 	function fetchRelation(int $id): Element {
@@ -156,6 +148,23 @@ class DbLoader extends Loader {
 		return $lines;
 	}
 
+	private function loadMaxZoom(\PDO $dbh, string $type, int $id, ?int $version = null): int {
+		$table_name = $type . "_tags";
+		$element_condition = $type . "_id = :id";
+		$bindings = ["id" => $id];
+		if ($version !== null) {
+			$element_condition .= " AND version = :version";
+			$bindings["version"] = $version;
+		} else {
+			$table_name = "current_" . $table_name;
+		}
+		$sth = $dbh->prepare("SELECT v FROM $table_name WHERE $element_condition AND k = 'amenity'");
+		$sth->execute($bindings);
+		$row = $sth->fetch();
+		if (in_array(@$row['v'], Element::AMENITY_MAX_ZOOM_TAG_VALUES)) return Element::AMENITY_MAX_ZOOM;
+		return Element::DEFAULT_MAX_ZOOM;
+	}
+
 	private function makeNodeFromRow(array $row): Element {
 		$point = new Point($this->makeNormalizedCoordsFromRow($row));
 		return new Element($point);
@@ -165,10 +174,5 @@ class DbLoader extends Loader {
 		$lat = $row["latitude"] / DB_COORDS_SCALE;
 		$lon = $row["longitude"] / DB_COORDS_SCALE;
 		return NormalizedCoords::fromLatLon($lat, $lon);
-	}
-
-	private function getMaxZoomFromAmenityTagRow(array|false $row): int {
-		if (in_array(@$row['v'], Element::AMENITY_MAX_ZOOM_TAG_VALUES)) return Element::AMENITY_MAX_ZOOM;
-		return Element::DEFAULT_MAX_ZOOM;
 	}
 }
