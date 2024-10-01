@@ -81,7 +81,7 @@ class ApiLoader extends Loader {
 		if (@$way_data->visible === false) return new Deletion($way_data->version);
 		$way_coords = array_map(fn($node_id) => $node_coords[$node_id], $way_data->nodes);
 		$line = new LineString(...$way_coords);
-		return new Element($line);
+		return new Element($line, $this->getMaxZoomFromTags(@$way_data->tags));
 	}
 
 	private function getRelationOrDeletionFromData(int $id, object $data): Element | Deletion {
@@ -95,9 +95,11 @@ class ApiLoader extends Loader {
 				$ways_data[$element_data->id] = $element_data;
 			} elseif ($element_data->type == "relation") {
 				$relations_data[$element_data->id] = $element_data;
-				if ($element_data->id == $id && @$element_data->visible === false) return new Deletion($element_data->version);
 			}
 		}
+
+		if (!$relations_data[$id]) throw new InvalidDataException("no data provided for requested relation #$id");
+		if ($relations_data[$id]->visible === false) return new Deletion($relations_data[$id]->version);
 
 		$selected_nodes_data = [];
 		$selected_ways_data = [];
@@ -134,7 +136,7 @@ class ApiLoader extends Loader {
 			)
 		), $selected_ways_data);
 		$geometry = new GeometryCollection(...$points, ...$lines);
-		return new Element($geometry);
+		return new Element($geometry, $this->getMaxZoomFromTags(@$relations_data[$id]->tags));
 	}
 
 	private function getMaxZoomFromTags(?object $tags): int {
