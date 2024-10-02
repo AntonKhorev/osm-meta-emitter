@@ -2,7 +2,7 @@
 
 class OsmTilePlacement {
 	function __construct(
-		public string $path,
+		public TileIndex $index,
 		public IntPixelCoords $offset
 	) {}
 }

@@ -5,6 +5,7 @@ class Element {
 
 	function __construct(
 		public Geometry $geometry,
-		public array $tags
+		public array $tags,
+		public \DateTimeImmutable $timestamp
 	) {}
 }

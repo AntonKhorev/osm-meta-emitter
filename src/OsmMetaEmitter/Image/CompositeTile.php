@@ -1,6 +1,8 @@
 <?php namespace OsmMetaEmitter\Image;
 
 class CompositeTile {
+	public ?array $etags = null;
+
 	function __construct(
 		private \OsmMetaEmitter\Graphics\CanvasFactory $canvas_factory,
 		private Scale $scale,
@@ -14,23 +16,35 @@ class CompositeTile {
 			new \OsmMetaEmitter\Graphics\Color("#808080")
 		);
 
-		foreach ($this->listOsmTilePlacements($this->scale) as $placement) {
-			$osm_tile_data = $fetchOsmTile($placement->path);
-			if ($osm_tile_data === null) continue;
-			$canvas->pasteImage($osm_tile_data, $placement->offset->x, $placement->offset->y);
+		$this->etags = [];
+		foreach ($this->listOsmTilePlacements() as $placement) {
+			$path = $this->scale->zoom . "/" . $placement->index->x . "/" . $placement->index->y . ".png";
+			$osm_tile_response = $fetchOsmTile($path);
+			if ($osm_tile_response->body === null) {
+				$this->etags = null;
+				continue;
+			}
+			if ($this->etags !== null) {
+				if ($osm_tile_response->etag === null) {
+					$this->etags = null;
+				} else {
+					$this->etags[] = $osm_tile_response->etag;
+				}
+			}
+			$canvas->pasteImage($osm_tile_response->body, $placement->offset->x, $placement->offset->y);
 		}
 
 		return $canvas;
 	}
 
-	private function listOsmTilePlacements(Scale $scale): \Generator {
-		$bbox = $scale->constrainTileIndexBboxToWorld(
-			$scale->convertIntPixelCoordsBboxToTileIndexBbox($this->window)
+	private function listOsmTilePlacements(): \Generator {
+		$bbox = $this->scale->constrainTileIndexBboxToWorld(
+			$this->scale->convertIntPixelCoordsBboxToTileIndexBbox($this->window)
 		);
 		foreach ($bbox->iterateOverTileIndexes() as $tile_index) {
-			$tile_coords = $scale->convertTileIndexToIntPixelCoords($tile_index);
+			$tile_coords = $this->scale->convertTileIndexToIntPixelCoords($tile_index);
 			$tile_offset = $this->window->getIntOffset($tile_coords);
-			yield new OsmTilePlacement("$scale->zoom/$tile_index->x/$tile_index->y.png", $tile_offset);
+			yield new OsmTilePlacement($tile_index, $tile_offset);
 		}
 	}
 }

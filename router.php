@@ -68,7 +68,7 @@ if (is_numeric($settings["max_zoom"])) {
 }
 
 $image_writer = new OsmMetaEmitter\Image\Writer(
-	$client, $settings["osm_tile_url"], $image_size, $max_zoom_algorithm, $canvas_factory, $settings["image_crosshair"]
+	$client, $settings["osm_tile_url"], $image_size, $max_zoom_algorithm, $canvas_factory, $settings["image_crosshair"], $settings["client_cache"]
 );
 
 if ($settings["element_pages"]) {

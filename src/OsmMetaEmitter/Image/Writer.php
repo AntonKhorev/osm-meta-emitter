@@ -7,7 +7,8 @@ class Writer {
 		private IntPixelSize $image_size,
 		private \OsmMetaEmitter\Osm\MaxZoomAlgorithm $max_zoom_algorithm,
 		private \OsmMetaEmitter\Graphics\CanvasFactory $canvas_factory,
-		private bool $crosshair
+		private bool $crosshair,
+		private bool $client_cache
 	) {}
 
 	function respondWithElementImage(\OsmMetaEmitter\Osm\Element $element): void {
@@ -19,12 +20,20 @@ class Writer {
 		$composite_tile = new CompositeTile($this->canvas_factory, $scale, $window);
 
 		$canvas = $composite_tile->getCanvas(
-			fn(string $path) => $this->client->fetch($this->osm_tile_url . $path, 15)
+			fn(string $path) => $this->client->fetchWithEtag($this->osm_tile_url . $path, 15)
 		);
 
 		if ($this->crosshair) $canvas->drawCrosshair();
 		$this->drawGeometry($scale, $window, $canvas, $element->visible, $element->geometry);
 
+		if ($this->client_cache) {
+			header("Cache-Control: max-age=3600, stale-while-revalidate=604800, stale-if-error=604800");
+			if ($composite_tile->etags !== null) {
+				$main_etag = rtrim(base64_encode(pack("L", $element->timestamp->getTimestamp())), "=");
+				$tile_etags = implode(":", $composite_tile->etags);
+				header("ETag: \"v1:$main_etag:$tile_etags\"");
+			}
+		}
 		$canvas->outputImage();
 	}
 

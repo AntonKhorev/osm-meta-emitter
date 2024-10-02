@@ -24,17 +24,19 @@ class DbLoader extends Loader {
 	function fetchNode(int $id): Element {
 		$dbh = $this->connect();
 		$sth = $dbh->prepare("
-			SELECT latitude, longitude, visible, version
+			SELECT latitude, longitude, visible, version, timestamp
 			FROM current_nodes
 			WHERE id = :id
 		");
 		$sth->execute(["id" => $id]);
 		$node_row = $sth->fetch();
 		if (!$node_row) throw new NotAvailableException("node #$id is not available");
+		$timestamp = $this->getTimestampFromRow($node_row);
 		if ($node_row["visible"]) {
 			return new Element(
 				new Point($this->makeNormalizedCoordsFromRow($node_row)),
-				$this->loadTags($dbh, "node", $id)
+				$this->loadTags($dbh, "node", $id),
+				$timestamp
 			);
 		}
 
@@ -50,7 +52,8 @@ class DbLoader extends Loader {
 		if (!$node_row) throw new NotAvailableException("node #$id is not available when requesting a previous version");
 		$node = new Element(
 			new Point($this->makeNormalizedCoordsFromRow($node_row)),
-			$this->loadTags($dbh, "node", $id, $previous_version)
+			$this->loadTags($dbh, "node", $id, $previous_version),
+			$timestamp
 		);
 		$node->visible = false;
 		return $node;
@@ -58,13 +61,14 @@ class DbLoader extends Loader {
 
 	function fetchWay(int $id): Element {
 		$dbh = $this->connect();
-		$sth = $dbh->prepare("SELECT visible FROM current_ways WHERE id = :id AND visible");
+		$sth = $dbh->prepare("SELECT timestamp FROM current_ways WHERE id = :id AND visible");
 		$sth->execute(["id" => $id]);
 		$way_row = $sth->fetch();
 		if (!$way_row) throw new NotAvailableException("way #$id is not available");
 
+		$timestamp = $this->getTimestampFromRow($way_row);
 		$sth = $dbh->prepare("
-			SELECT latitude, longitude, visible
+			SELECT latitude, longitude, visible, timestamp
 			FROM current_way_nodes JOIN current_nodes ON node_id = id
 			WHERE way_id = :id
 			ORDER BY sequence_id
@@ -74,22 +78,25 @@ class DbLoader extends Loader {
 		while ($node_row = $sth->fetch()) {
 			if (!$node_row["visible"]) throw new InvisibleMemberException("way #$id contains invisible nodes");
 			$way_coords[] = $this->makeNormalizedCoordsFromRow($node_row);
+			$timestamp = max($timestamp, $this->getTimestampFromRow($node_row));
 		}
 		return new Element(
 			new LineString(...$way_coords),
-			$this->loadTags($dbh, "way", $id)
+			$this->loadTags($dbh, "way", $id),
+			$timestamp
 		);
 	}
 
 	function fetchRelation(int $id): Element {
 		$dbh = $this->connect();
-		$sth = $dbh->prepare("SELECT visible FROM current_relations WHERE id = :id AND visible");
+		$sth = $dbh->prepare("SELECT timestamp FROM current_relations WHERE id = :id AND visible");
 		$sth->execute(["id" => $id]);
 		$relation_row = $sth->fetch();
 		if (!$relation_row) throw new NotAvailableException("relation #$id is not available");
 
+		$timestamp = $this->getTimestampFromRow($relation_row);
 		$sth = $dbh->prepare("
-			SELECT latitude, longitude, visible
+			SELECT latitude, longitude, visible, timestamp
 			FROM current_relation_members JOIN current_nodes ON member_id = id
 			WHERE relation_id = :id AND member_type = 'Node'
 		");
@@ -98,10 +105,11 @@ class DbLoader extends Loader {
 		while ($node_row = $sth->fetch()) {
 			if (!$node_row["visible"]) throw new InvisibleMemberException("relation #$id contains invisible nodes");
 			$points[] = new Point($this->makeNormalizedCoordsFromRow($node_row));
+			$timestamp = max($timestamp, $this->getTimestampFromRow($node_row));
 		}
 
 		$sth = $dbh->prepare("
-			SELECT id, visible
+			SELECT id, visible, timestamp
 			FROM current_relation_members JOIN current_ways ON member_id = id
 			WHERE relation_id = :id AND member_type = 'Way'
 		");
@@ -110,12 +118,14 @@ class DbLoader extends Loader {
 		while ($way_row = $sth->fetch()) {
 			if (!$way_row["visible"]) throw new InvisibleMemberException("relation #$id contains invisible way #$way_row[id]");
 			$way_ids[] = $way_row["id"];
+			$timestamp = max($timestamp, $this->getTimestampFromRow($way_row));
 		}
 		$lines = $this->loadWayLines($dbh, $id, $way_ids);
 
 		return new Element(
 			new GeometryCollection(...$points, ...$lines),
-			$this->loadTags($dbh, "relation", $id)
+			$this->loadTags($dbh, "relation", $id),
+			$timestamp
 		);
 	}
 
@@ -178,5 +188,9 @@ class DbLoader extends Loader {
 		$lat = $row["latitude"] / DB_COORDS_SCALE;
 		$lon = $row["longitude"] / DB_COORDS_SCALE;
 		return NormalizedCoords::fromLatLon($lat, $lon);
+	}
+
+	private function getTimestampFromRow(array $row): \DateTimeImmutable {
+		return date_create_immutable("$row[timestamp] UTC");
 	}
 }
