@@ -1,5 +1,5 @@
 <?php namespace OsmMetaEmitter\Osm;
 
 abstract class MaxZoomAlgorithm {
-	abstract function getMaxZoomFromTags(?object $tags): int;
+	abstract function getMaxZoomFromTags(array $tags): int;
 }

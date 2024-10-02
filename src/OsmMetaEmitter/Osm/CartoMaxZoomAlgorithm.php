@@ -9,10 +9,9 @@ const AMENITY_MAX_ZOOM_TAG_VALUES = [
 ];
 
 class CartoMaxZoomAlgorithm extends MaxZoomAlgorithm {
-	function getMaxZoomFromTags(?object $tags): int {
-		if (!$tags) return DEFAULT_MAX_ZOOM;
-		if (@$tags->place) return PLACE_MAX_ZOOM;
-		if (in_array(@$tags->amenity, AMENITY_MAX_ZOOM_TAG_VALUES)) return AMENITY_MAX_ZOOM;
+	function getMaxZoomFromTags(array $tags): int {
+		if (@$tags["place"]) return PLACE_MAX_ZOOM;
+		if (in_array(@$tags["amenity"], AMENITY_MAX_ZOOM_TAG_VALUES)) return AMENITY_MAX_ZOOM;
 		return DEFAULT_MAX_ZOOM;
 	}
 }

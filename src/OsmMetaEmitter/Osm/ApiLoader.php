@@ -65,7 +65,7 @@ class ApiLoader extends Loader {
 		if ($node_data === null) throw new InvalidDataException("no data provided for requested node #$id");
 		if (@$node_data->visible === false) return new Deletion($node_data->version);
 		$point = new Point(NormalizedCoords::fromObject($node_data));
-		return new Element($point, @$node_data->tags);
+		return new Element($point, @(array)$node_data->tags);
 	}
 
 	private function getWayOrDeletionFromData(int $id, object $data): Element | Deletion {
@@ -81,7 +81,7 @@ class ApiLoader extends Loader {
 		if (@$way_data->visible === false) return new Deletion($way_data->version);
 		$way_coords = array_map(fn($node_id) => $node_coords[$node_id], $way_data->nodes);
 		$line = new LineString(...$way_coords);
-		return new Element($line, @$way_data->tags);
+		return new Element($line, @(array)$way_data->tags);
 	}
 
 	private function getRelationOrDeletionFromData(int $id, object $data): Element | Deletion {
@@ -136,6 +136,6 @@ class ApiLoader extends Loader {
 			)
 		), $selected_ways_data);
 		$geometry = new GeometryCollection(...$points, ...$lines);
-		return new Element($geometry, @$relations_data[$id]->tags);
+		return new Element($geometry, @(array)$relations_data[$id]->tags);
 	}
 }

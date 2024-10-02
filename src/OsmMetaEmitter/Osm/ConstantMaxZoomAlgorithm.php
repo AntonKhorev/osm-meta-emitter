@@ -5,7 +5,7 @@ class ConstantMaxZoomAlgorithm extends MaxZoomAlgorithm {
 		private int $max_zoom
 	) {}
 
-	function getMaxZoomFromTags(?object $tags): int {
+	function getMaxZoomFromTags(array $tags): int {
 		return $this->max_zoom;
 	}
 }

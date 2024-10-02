@@ -150,7 +150,7 @@ class DbLoader extends Loader {
 		return $lines;
 	}
 
-	private function loadTags(\PDO $dbh, string $type, int $id, ?int $version = null): object {
+	private function loadTags(\PDO $dbh, string $type, int $id, ?int $version = null): array {
 		$table_name = $type . "_tags";
 		$element_condition = $type . "_id = :id";
 		$params = ["id" => $id];
@@ -161,12 +161,10 @@ class DbLoader extends Loader {
 			$table_name = "current_" . $table_name;
 		}
 		$sth = $dbh->prepare("SELECT k, v FROM $table_name WHERE $element_condition");
-		$sth->bindColumn("k", $k);
-		$sth->bindColumn("v", $v);
 		$sth->execute($params);
-		$tags = new \stdClass;
-		while ($sth->fetch(\PDO::FETCH_BOUND)) {
-			$tags->$k = $v;
+		$tags = [];
+		while ($row = $sth->fetch()) {
+			$tags[$row["k"]] = $row["v"];
 		}
 		return $tags;
 	}
