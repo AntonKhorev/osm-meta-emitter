@@ -5,6 +5,7 @@ class Writer {
 		private HttpClient $client,
 		private string $osm_tile_url,
 		private IntPixelSize $image_size,
+		private \OsmMetaEmitter\Osm\MaxZoomAlgorithm $max_zoom_algorithm,
 		private \OsmMetaEmitter\Graphics\CanvasFactory $canvas_factory,
 		private bool $crosshair
 	) {}
@@ -30,7 +31,8 @@ class Writer {
 	private function getScaleForElement(\OsmMetaEmitter\Osm\Element $element, int $margin = 4): Scale {
 		$bbox = $element->geometry->getBbox();
 		$size_to_fit_into = $this->image_size->withoutMargins($margin);
-		for ($zoom = $element->max_zoom; $zoom >= 0; $zoom--) {
+		$max_zoom = $this->max_zoom_algorithm->getMaxZoomFromTags($element->tags);
+		for ($zoom = $max_zoom; $zoom >= 0; $zoom--) {
 			$scale = new Scale($zoom);
 			$pixel_bbox = $scale->convertNormalizedCoordsBboxToFloatPixelCoordsBbox($bbox)->toInt();
 			if ($pixel_bbox->getSize()->fitsInto($size_to_fit_into)) return $scale;

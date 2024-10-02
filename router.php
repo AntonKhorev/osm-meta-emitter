@@ -45,7 +45,18 @@ if ($settings["graphics_module"] == "gd") {
 } else {
 	throw new Exception("unknown graphics module $settings[graphics_module]");
 }
-$image_writer = new OsmMetaEmitter\Image\Writer($client, $settings["osm_tile_url"], $image_size, $canvas_factory, $settings["image_crosshair"]);
+
+if (is_numeric($settings["max_zoom"])) {
+	$max_zoom_algorithm = new OsmMetaEmitter\Osm\ConstantMaxZoomAlgorithm($settings["max_zoom"]);
+} elseif ($settings["max_zoom"] == "carto") {
+	$max_zoom_algorithm = new OsmMetaEmitter\Osm\CartoMaxZoomAlgorithm;
+} else {
+	throw new Exception("unknown max zoom algorithm $settings[max_zoom]");
+}
+
+$image_writer = new OsmMetaEmitter\Image\Writer(
+	$client, $settings["osm_tile_url"], $image_size, $max_zoom_algorithm, $canvas_factory, $settings["image_crosshair"]
+);
 
 if ($settings["element_pages"]) {
 	$web_page_writer = new OsmMetaEmitter\WebPage\Writer(
