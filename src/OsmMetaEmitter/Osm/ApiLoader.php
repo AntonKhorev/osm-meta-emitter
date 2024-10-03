@@ -99,7 +99,7 @@ class ApiLoader extends Loader {
 		}
 
 		if (!$relations_data[$id]) throw new InvalidDataException("no data provided for requested relation #$id");
-		if ($relations_data[$id]->visible === false) return new Deletion($relations_data[$id]->version);
+		if (@$relations_data[$id]->visible === false) return new Deletion($relations_data[$id]->version);
 
 		$selected_nodes_data = [];
 		$selected_ways_data = [];
