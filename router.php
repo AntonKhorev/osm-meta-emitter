@@ -23,7 +23,7 @@ if ($settings["logger"] == "syslog") {
 $disabled_logger = new OsmMetaEmitter\DisabledLogger;
 
 if ($settings["log_incoming_http_requests"]) {
-	$logger->log("incoming http request: " . print_r($_SERVER, true));
+	log_incoming_http_request($logger);
 }
 
 if (php_sapi_name() == "cli-server") {
@@ -82,3 +82,16 @@ if ($settings["element_pages"]) {
 
 $router = new OsmMetaEmitter\Router($loader, $image_writer, $web_page_writer, $settings["site_logo"]);
 $router->route($request);
+
+function log_incoming_http_request(OsmMetaEmitter\Logger $logger) {
+	$message = "";
+	$message .= "incoming http request (\n";
+	$message .= "    $_SERVER[REQUEST_METHOD] $_SERVER[REQUEST_URI] $_SERVER[SERVER_PROTOCOL]\n";
+	foreach ($_SERVER as $key => $value) {
+		if (!preg_match("/^HTTP_(.*)$/", $key, $match)) continue;
+		$name = strtr(strtolower($match[1]), "_", "-");
+		$message .= "    $name: $value\n";
+	}
+	$message .= ")";
+	$logger->log($message);
+}
