@@ -15,6 +15,8 @@ $settings = OsmMetaEmitter\Settings::read();
 
 if ($settings["logger"] == "syslog") {
 	$logger = new OsmMetaEmitter\SyslogLogger;
+} elseif ($settings["logger"] == "file") {
+	$logger = new OsmMetaEmitter\FileLogger;
 } else {
 	$logger = new OsmMetaEmitter\DisabledLogger;
 }
