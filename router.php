@@ -13,6 +13,17 @@ spl_autoload_register(function ($class_name) {
 
 $settings = OsmMetaEmitter\Settings::read();
 
+if ($settings["logger"] == "syslog") {
+	$logger = new OsmMetaEmitter\SyslogLogger;
+} else {
+	$logger = new OsmMetaEmitter\DisabledLogger;
+}
+$disabled_logger = new OsmMetaEmitter\DisabledLogger;
+
+if ($settings["log_incoming_http_requests"]) {
+	$logger->log("incoming http request: " . print_r($_SERVER, true));
+}
+
 if (php_sapi_name() == "cli-server") {
 	$root = "/";
 } else {
@@ -27,7 +38,7 @@ if (substr($_SERVER['REQUEST_URI'], 0, strlen($root)) == $root) {
 	$request = substr($_SERVER['REQUEST_URI'], strlen($root));
 }
 
-$client = new OsmMetaEmitter\HttpClient($settings["osm_tile_url"], $settings["log_http_requests"]);
+$client = new OsmMetaEmitter\HttpClient($settings["log_outgoing_http_requests"] ? $logger : $disabled_logger);
 
 if ($settings["osm_loader"] == "api") {
 	$loader = new OsmMetaEmitter\Osm\ApiLoader($client, $settings["osm_api_url"]);
