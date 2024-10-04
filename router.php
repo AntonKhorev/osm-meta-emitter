@@ -93,5 +93,5 @@ function log_incoming_http_request(OsmMetaEmitter\Logger $logger) {
 		$name = strtr(strtolower($match[1]), "_", "-");
 		$items[] = "$name: $value";
 	}
-	$logger->logHttp("client --> self", $items);
+	$logger->logHttp("$_SERVER[REMOTE_ADDR] --> self", $items);
 }

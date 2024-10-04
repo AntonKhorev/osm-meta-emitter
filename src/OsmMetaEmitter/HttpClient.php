@@ -67,8 +67,8 @@ class HttpClient implements Osm\HttpClient, Image\HttpClient {
 		foreach (preg_split("/\\R/", curl_getinfo($ch, CURLINFO_HEADER_OUT)) as $header) {
 			if (strlen($header) > 0) $request_headers[] = $header;
 		}
-		$this->logger->logHttp("client --- self --> $url", $request_headers, curl_getinfo($ch, CURLINFO_SIZE_UPLOAD), $timestamp_before);
-		$this->logger->logHttp("client --- self <-- $url", $response_headers, curl_getinfo($ch, CURLINFO_SIZE_DOWNLOAD), $timestamp_after);
+		$this->logger->logHttp("self --> $url", $request_headers, curl_getinfo($ch, CURLINFO_SIZE_UPLOAD), $timestamp_before);
+		$this->logger->logHttp("self <-- $url", $response_headers, curl_getinfo($ch, CURLINFO_SIZE_DOWNLOAD), $timestamp_after);
 
 		return $response_string;
 	}
