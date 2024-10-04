@@ -7,7 +7,8 @@ class ClientCacheHandler {
 	public ?bool $can_skip_tiles = null;
 
 	function __construct(
-		public bool $enabled
+		public bool $enabled,
+		private int $max_age
 	) {
 		$this->start_timestamp = new \DateTimeImmutable;
 		if (!$this->enabled) return;
@@ -36,12 +37,12 @@ class ClientCacheHandler {
 		}
 
 		$cache_age_seconds = $this->start_timestamp->getTimestamp() - $cache_epoch_seconds;
-		$this->can_skip_tiles = $cache_age_seconds < 60*60;
+		$this->can_skip_tiles = $cache_age_seconds < $this->max_age;
 	}
 	
 	function sendEtagHeaders(\DateTimeImmutable $main_timestamp, ?array $tile_etags): void {
 		if ($this->enabled) {
-			header("Cache-Control: max-age=3600, stale-while-revalidate=604800, stale-if-error=604800");
+			header("Cache-Control: max-age=$this->max_age, stale-while-revalidate=604800, stale-if-error=604800");
 			if ($tile_etags !== null) {
 				$main_etag = $this->computeMainEtag(max($this->start_timestamp, $main_timestamp));
 				$combined_tile_etags = implode(":", $tile_etags);

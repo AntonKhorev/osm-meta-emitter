@@ -67,7 +67,7 @@ if (is_numeric($settings["max_zoom"])) {
 	throw new Exception("unknown max zoom algorithm $settings[max_zoom]");
 }
 
-$client_cache_handler = new OsmMetaEmitter\ClientCacheHandler($settings["client_cache"]);
+$client_cache_handler = new OsmMetaEmitter\ClientCacheHandler($settings["client_cache"], $settings["client_cache_max_age"]);
 $tile_loader = new OsmMetaEmitter\Tile\Loader($client, $settings["osm_tile_url"]);
 $image_writer = new OsmMetaEmitter\Image\Writer(
 	$client_cache_handler, $tile_loader,
