@@ -14,10 +14,7 @@ class HttpClient implements Osm\HttpClient, Image\HttpClient {
 			if (strlen(rtrim($header))) $response_headers[] = rtrim($header);
 			return strlen($header);
 		});
-
-		$response_string = curl_exec($ch);
-		curl_close($ch);
-		$this->logRequest($ch, $url, $response_headers);
+		$response_string = $this->runRequest($ch, $url, $response_headers);
 
 		$response_code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
 		if ($response_code != 200) return null;
@@ -40,10 +37,7 @@ class HttpClient implements Osm\HttpClient, Image\HttpClient {
 			if (strlen(rtrim($header))) $response_headers[] = rtrim($header);
 			return strlen($header);
 		});
-
-		$response_string = curl_exec($ch);
-		curl_close($ch);
-		$this->logRequest($ch, $url, $response_headers);
+		$response_string = $this->runRequest($ch, $url, $response_headers);
 
 		$response_code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
 		if ($response_code == 304) {
@@ -63,12 +57,19 @@ class HttpClient implements Osm\HttpClient, Image\HttpClient {
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 	}
 
-	private function logRequest(\CurlHandle $ch, string $url, array $response_headers): void {
+	private function runRequest(\CurlHandle $ch, string $url, array &$response_headers): string | bool {
+		$timestamp_before = new \DateTimeImmutable;
+		$response_string = curl_exec($ch);
+		$timestamp_after = new \DateTimeImmutable;
+		curl_close($ch);
+
 		$request_headers = [];
 		foreach (preg_split("/\\R/", curl_getinfo($ch, CURLINFO_HEADER_OUT)) as $header) {
 			if (strlen($header) > 0) $request_headers[] = $header;
 		}
-		$this->logger->logHttp("client --- self --> $url", $request_headers, curl_getinfo($ch, CURLINFO_SIZE_UPLOAD));
-		$this->logger->logHttp("client --- self <-- $url", $response_headers, curl_getinfo($ch, CURLINFO_SIZE_DOWNLOAD));
+		$this->logger->logHttp("client --- self --> $url", $request_headers, curl_getinfo($ch, CURLINFO_SIZE_UPLOAD), $timestamp_before);
+		$this->logger->logHttp("client --- self <-- $url", $response_headers, curl_getinfo($ch, CURLINFO_SIZE_DOWNLOAD), $timestamp_after);
+
+		return $response_string;
 	}
 }
