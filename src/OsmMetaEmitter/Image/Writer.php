@@ -2,38 +2,38 @@
 
 class Writer {
 	function __construct(
-		private HttpClient $client,
-		private string $osm_tile_url,
+		private \OsmMetaEmitter\ClientCacheHandler $client_cache_handler,
+		private \OsmMetaEmitter\Tile\Loader $tile_loader,
 		private IntPixelSize $image_size,
 		private \OsmMetaEmitter\Osm\MaxZoomAlgorithm $max_zoom_algorithm,
 		private \OsmMetaEmitter\Graphics\CanvasFactory $canvas_factory,
 		private bool $crosshair,
-		private bool $client_cache
 	) {}
 
 	function respondWithElementImage(\OsmMetaEmitter\Osm\Element $element): void {
+		$this->client_cache_handler->checkMainEtag($element->timestamp);
+
 		$scale = $this->getScaleForElement($element);
 		$window = IntPixelCoordsBbox::fromCenterAndSize(
 			$scale->convertNormalizedCoordsToFloatPixelCoords($element->geometry->getCenter()),
 			$this->image_size
 		);
-		$composite_tile = new CompositeTile($this->canvas_factory, $scale, $window);
-
-		$canvas = $composite_tile->getCanvas(
-			fn(string $path) => $this->client->fetchWithEtag($this->osm_tile_url . $path, 15)
+		$composite_tile = new CompositeTile(
+			$this->tile_loader, $this->canvas_factory,
+			$scale, $window,
+			$this->client_cache_handler->tile_etags
 		);
+
+		$canvas = $composite_tile->getCanvas();
+		if (!$canvas) {
+			$this->client_cache_handler->sendNotModifiedHeaders();
+			return;
+		}
 
 		if ($this->crosshair) $canvas->drawCrosshair();
 		$this->drawGeometry($scale, $window, $canvas, $element->visible, $element->geometry);
 
-		if ($this->client_cache) {
-			header("Cache-Control: max-age=3600, stale-while-revalidate=604800, stale-if-error=604800");
-			if ($composite_tile->etags !== null) {
-				$main_etag = rtrim(base64_encode(pack("L", $element->timestamp->getTimestamp())), "=");
-				$tile_etags = implode(":", $composite_tile->etags);
-				header("ETag: \"v1:$main_etag:$tile_etags\"");
-			}
-		}
+		$this->client_cache_handler->sendEtagHeaders($element->timestamp, $composite_tile->etags);
 		$canvas->outputImage();
 	}
 

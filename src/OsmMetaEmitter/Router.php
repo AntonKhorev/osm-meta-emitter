@@ -4,7 +4,7 @@ class Router {
 	function __construct(
 		private Osm\Loader $loader,
 		private Image\Writer $image_writer,
-		private WebPage\Writer | null $web_page_writer,
+		private ?WebPage\Writer $web_page_writer,
 		private string $site_logo
 	) {}
 

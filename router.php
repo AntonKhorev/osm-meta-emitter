@@ -67,8 +67,11 @@ if (is_numeric($settings["max_zoom"])) {
 	throw new Exception("unknown max zoom algorithm $settings[max_zoom]");
 }
 
+$client_cache_handler = new OsmMetaEmitter\ClientCacheHandler($settings["client_cache"]);
+$tile_loader = new OsmMetaEmitter\Tile\Loader($client, $settings["osm_tile_url"]);
 $image_writer = new OsmMetaEmitter\Image\Writer(
-	$client, $settings["osm_tile_url"], $image_size, $max_zoom_algorithm, $canvas_factory, $settings["image_crosshair"], $settings["client_cache"]
+	$client_cache_handler, $tile_loader,
+	$image_size, $max_zoom_algorithm, $canvas_factory, $settings["image_crosshair"]
 );
 
 if ($settings["element_pages"]) {
@@ -84,14 +87,11 @@ $router = new OsmMetaEmitter\Router($loader, $image_writer, $web_page_writer, $s
 $router->route($request);
 
 function log_incoming_http_request(OsmMetaEmitter\Logger $logger) {
-	$message = "";
-	$message .= "incoming http request (\n";
-	$message .= "    $_SERVER[REQUEST_METHOD] $_SERVER[REQUEST_URI] $_SERVER[SERVER_PROTOCOL]\n";
+	$items = ["$_SERVER[REQUEST_METHOD] $_SERVER[REQUEST_URI] $_SERVER[SERVER_PROTOCOL]"];
 	foreach ($_SERVER as $key => $value) {
 		if (!preg_match("/^HTTP_(.*)$/", $key, $match)) continue;
 		$name = strtr(strtolower($match[1]), "_", "-");
-		$message .= "    $name: $value\n";
+		$items[] = "$name: $value";
 	}
-	$message .= ")";
-	$logger->log($message);
+	$logger->logHttp("client --> self", $items);
 }
