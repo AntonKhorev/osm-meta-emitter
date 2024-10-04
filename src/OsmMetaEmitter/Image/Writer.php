@@ -37,7 +37,7 @@ class Writer {
 		if ($this->crosshair) $canvas->drawCrosshair();
 		$this->drawGeometry($scale, $window, $canvas, $element->visible, $element->geometry);
 
-		$this->client_cache_handler->sendEtagHeaders($element->timestamp, $composite_tile->etags);
+		$this->client_cache_handler->sendEtagHeaders($composite_tile->etags);
 		$canvas->outputImage();
 	}
 

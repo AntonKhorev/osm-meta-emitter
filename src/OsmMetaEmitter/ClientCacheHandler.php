@@ -8,7 +8,8 @@ class ClientCacheHandler {
 
 	function __construct(
 		public bool $enabled,
-		private int $max_age
+		private int $max_age,
+		private int $settings_epoch_seconds
 	) {
 		$this->start_timestamp = new \DateTimeImmutable;
 		if (!$this->enabled) return;
@@ -20,7 +21,7 @@ class ClientCacheHandler {
 		$this->tile_etags = $all_etags;
 	}
 
-	function checkMainEtag(\DateTimeImmutable $main_timestamp): void {
+	function checkMainEtag(\DateTimeImmutable $element_timestamp): void {
 		if (!$this->enabled || $this->main_etag === null) {
 			$this->main_etag = null;
 			$this->tile_etags = null;
@@ -28,8 +29,9 @@ class ClientCacheHandler {
 			return;
 		}
 
-		$cache_epoch_seconds = unpack("Lt", base64_decode($this->main_etag))["t"];
-		if ($cache_epoch_seconds < $main_timestamp->getTimestamp()) {
+		$data_epoch_seconds = max($this->settings_epoch_seconds, $element_timestamp->getTimestamp());
+		$cache_epoch_seconds = self::convertEtagToSeconds($this->main_etag);
+		if ($cache_epoch_seconds < $data_epoch_seconds) {
 			$this->main_etag = null;
 			$this->tile_etags = null;
 			$this->can_skip_tiles = false;
@@ -40,11 +42,11 @@ class ClientCacheHandler {
 		$this->can_skip_tiles = $cache_age_seconds < $this->max_age;
 	}
 	
-	function sendEtagHeaders(\DateTimeImmutable $main_timestamp, ?array $tile_etags): void {
+	function sendEtagHeaders(?array $tile_etags): void {
 		if ($this->enabled) {
 			header("Cache-Control: max-age=$this->max_age, stale-while-revalidate=604800, stale-if-error=604800");
 			if ($tile_etags !== null) {
-				$main_etag = $this->computeMainEtag(max($this->start_timestamp, $main_timestamp));
+				$main_etag = self::convertSecondsToEtag($this->start_timestamp->getTimestamp());
 				$combined_tile_etags = implode(":", $tile_etags);
 				header("ETag: \"v1:$main_etag:$combined_tile_etags\"");
 			}
@@ -59,7 +61,11 @@ class ClientCacheHandler {
 		}
 	}
 
-	private function computeMainEtag(\DateTimeImmutable $main_timestamp): string {
-		return rtrim(base64_encode(pack("L", $main_timestamp->getTimestamp())), "=");
+	private static function convertSecondsToEtag(int $seconds): string {
+		return rtrim(base64_encode(pack("L", $seconds)), "=");
+	}
+
+	private static function convertEtagToSeconds(string $etag): int {
+		return unpack("Lt", base64_decode($etag))["t"];
 	}
 }
