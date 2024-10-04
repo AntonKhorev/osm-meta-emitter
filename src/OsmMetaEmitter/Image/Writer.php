@@ -12,6 +12,10 @@ class Writer {
 
 	function respondWithElementImage(\OsmMetaEmitter\Osm\Element $element): void {
 		$this->client_cache_handler->checkMainEtag($element->timestamp);
+		if ($this->client_cache_handler->can_skip_tiles) {
+			$this->client_cache_handler->sendNotModifiedHeaders();
+			return;
+		}
 
 		$scale = $this->getScaleForElement($element);
 		$window = IntPixelCoordsBbox::fromCenterAndSize(
