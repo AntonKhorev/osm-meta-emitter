@@ -5,7 +5,7 @@ class SyslogLogger extends Logger {
 		openlog("osm-meta-emitter", LOG_PERROR, LOG_USER);
 	}
 
-	function log(string $message): void {
+	function logRaw(string $message): void {
 		syslog(LOG_INFO, $message);
 	}
 }

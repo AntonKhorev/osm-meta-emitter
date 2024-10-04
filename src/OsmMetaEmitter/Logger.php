@@ -1,7 +1,10 @@
 <?php namespace OsmMetaEmitter;
 
 abstract class Logger {
-	abstract function log(string $message): void;
+	function log(string $message): void {
+		$timestamp = (new \DateTime)->format(\DateTime::RFC3339_EXTENDED);
+		$this->logRaw("[$timestamp] $message");
+	}
 
 	function logHttp(string $title, array $items, ?int $size = null): void {
 		$message = "";
@@ -15,4 +18,6 @@ abstract class Logger {
 		}
 		$this->log($message);
 	}
+
+	abstract protected function logRaw(string $message): void;
 }
