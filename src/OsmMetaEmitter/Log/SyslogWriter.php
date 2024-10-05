@@ -1,6 +1,6 @@
-<?php namespace OsmMetaEmitter;
+<?php namespace OsmMetaEmitter\Log;
 
-class SyslogLogger extends Logger {
+class SyslogWriter extends Writer {
 	function __construct() {
 		openlog("osm-meta-emitter", LOG_PERROR, LOG_USER);
 	}

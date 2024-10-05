@@ -14,13 +14,13 @@ spl_autoload_register(function ($class_name) {
 $settings = OsmMetaEmitter\Settings::read();
 
 if ($settings["logger"] == "syslog") {
-	$logger = new OsmMetaEmitter\SyslogLogger;
+	$logger = new OsmMetaEmitter\Log\SyslogWriter;
 } elseif ($settings["logger"] == "file") {
-	$logger = new OsmMetaEmitter\FileLogger;
+	$logger = new OsmMetaEmitter\Log\FileWriter;
 } else {
-	$logger = new OsmMetaEmitter\DisabledLogger;
+	$logger = new OsmMetaEmitter\Log\DisabledWriter;
 }
-$disabled_logger = new OsmMetaEmitter\DisabledLogger;
+$disabled_logger = new OsmMetaEmitter\Log\DisabledWriter;
 
 if ($settings["log_incoming_http_requests"]) {
 	log_incoming_http_request($logger);
@@ -86,7 +86,7 @@ if ($settings["element_pages"]) {
 $router = new OsmMetaEmitter\Router($loader, $image_writer, $web_page_writer, $settings["site_logo"]);
 $router->route($request);
 
-function log_incoming_http_request(OsmMetaEmitter\Logger $logger) {
+function log_incoming_http_request(OsmMetaEmitter\Log\Writer $logger) {
 	$items = ["$_SERVER[REQUEST_METHOD] $_SERVER[REQUEST_URI] $_SERVER[SERVER_PROTOCOL]"];
 	foreach ($_SERVER as $key => $value) {
 		if (!preg_match("/^HTTP_(.*)$/", $key, $match)) continue;
