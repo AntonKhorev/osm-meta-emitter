@@ -2,7 +2,7 @@
 
 class ApiLoader extends Loader {
 	function __construct(
-		private HttpClient $client,
+		private \OsmMetaEmitter\Http\Client $client,
 		private string $osm_api_url
 	) {}
 

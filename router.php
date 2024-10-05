@@ -40,7 +40,7 @@ if (substr($_SERVER['REQUEST_URI'], 0, strlen($root)) == $root) {
 	$request = substr($_SERVER['REQUEST_URI'], strlen($root));
 }
 
-$client = new OsmMetaEmitter\HttpClient($settings["log_outgoing_http_requests"] ? $logger : $disabled_logger);
+$client = new OsmMetaEmitter\Http\Client($settings["log_outgoing_http_requests"] ? $logger : $disabled_logger);
 
 if ($settings["osm_loader"] == "api") {
 	$loader = new OsmMetaEmitter\Osm\ApiLoader($client, $settings["osm_api_url"]);
@@ -67,10 +67,10 @@ if (is_numeric($settings["max_zoom"])) {
 	throw new Exception("unknown max zoom algorithm $settings[max_zoom]");
 }
 
-$client_cache_handler = new OsmMetaEmitter\ClientCacheHandler($settings["client_cache"], $settings["client_cache_max_age"], $settings["settings_epoch_seconds"]);
+$etag_handler = new OsmMetaEmitter\Http\EtagHandler($settings["client_cache"], $settings["client_cache_max_age"], $settings["settings_epoch_seconds"]);
 $tile_loader = new OsmMetaEmitter\Tile\Loader($client, $settings["osm_tile_url"]);
 $image_writer = new OsmMetaEmitter\Image\Writer(
-	$client_cache_handler, $tile_loader,
+	$etag_handler, $tile_loader,
 	$image_size, $max_zoom_algorithm, $canvas_factory, $settings["image_crosshair"]
 );
 

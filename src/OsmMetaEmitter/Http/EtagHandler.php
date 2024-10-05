@@ -1,6 +1,6 @@
-<?php namespace OsmMetaEmitter;
+<?php namespace OsmMetaEmitter\Http;
 
-class ClientCacheHandler {
+class EtagHandler {
 	private \DateTimeImmutable $start_timestamp;
 	private ?string $main_etag = null;
 	public ?array $tile_etags = null;

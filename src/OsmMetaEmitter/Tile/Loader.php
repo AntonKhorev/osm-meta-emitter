@@ -2,7 +2,7 @@
 
 class Loader {
 	function __construct(
-		private \OsmMetaEmitter\HttpClient $client,
+		private \OsmMetaEmitter\Http\Client $client,
 		private string $osm_tile_url,
 	) {}
 

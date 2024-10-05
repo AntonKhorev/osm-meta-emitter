@@ -2,7 +2,7 @@
 
 class Writer {
 	function __construct(
-		private \OsmMetaEmitter\ClientCacheHandler $client_cache_handler,
+		private \OsmMetaEmitter\Http\EtagHandler $etag_handler,
 		private \OsmMetaEmitter\Tile\Loader $tile_loader,
 		private IntPixelSize $image_size,
 		private \OsmMetaEmitter\Osm\MaxZoomAlgorithm $max_zoom_algorithm,
@@ -11,9 +11,9 @@ class Writer {
 	) {}
 
 	function respondWithElementImage(\OsmMetaEmitter\Osm\Element $element): void {
-		$this->client_cache_handler->checkMainEtag($element->timestamp);
-		if ($this->client_cache_handler->can_skip_tiles) {
-			$this->client_cache_handler->sendNotModifiedHeaders();
+		$this->etag_handler->checkMainEtag($element->timestamp);
+		if ($this->etag_handler->can_skip_tiles) {
+			$this->etag_handler->sendNotModifiedHeaders();
 			return;
 		}
 
@@ -25,19 +25,19 @@ class Writer {
 		$composite_tile = new CompositeTile(
 			$this->tile_loader, $this->canvas_factory,
 			$scale, $window,
-			$this->client_cache_handler->tile_etags
+			$this->etag_handler->tile_etags
 		);
 
 		$canvas = $composite_tile->getCanvas();
 		if (!$canvas) {
-			$this->client_cache_handler->sendNotModifiedHeaders();
+			$this->etag_handler->sendNotModifiedHeaders();
 			return;
 		}
 
 		if ($this->crosshair) $canvas->drawCrosshair();
 		$this->drawGeometry($scale, $window, $canvas, $element->visible, $element->geometry);
 
-		$this->client_cache_handler->sendEtagHeaders($composite_tile->etags);
+		$this->etag_handler->sendEtagHeaders($composite_tile->etags);
 		$canvas->outputImage();
 	}
 

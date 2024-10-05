@@ -1,4 +1,4 @@
-<?php namespace OsmMetaEmitter;
+<?php namespace OsmMetaEmitter\Http;
 
 class EtaggedResponse {
 	function __construct(

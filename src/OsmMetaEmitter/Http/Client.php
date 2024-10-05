@@ -1,8 +1,8 @@
-<?php namespace OsmMetaEmitter;
+<?php namespace OsmMetaEmitter\Http;
 
-class HttpClient implements Osm\HttpClient, Image\HttpClient {
+class Client {
 	function __construct(
-		private Logger $logger
+		private \OsmMetaEmitter\Logger $logger
 	) {}
 
 	function fetch(string $url, int $timeout = 60): ?string {
