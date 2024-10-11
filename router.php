@@ -14,17 +14,16 @@ spl_autoload_register(function ($class_name) {
 $settings = OsmMetaEmitter\Settings::read();
 
 if ($settings["logger"] == "syslog") {
-	$logger = new OsmMetaEmitter\Log\SyslogWriter;
+	$log_writer = new OsmMetaEmitter\Log\SyslogWriter;
 } elseif ($settings["logger"] == "file") {
-	$logger = new OsmMetaEmitter\Log\FileWriter;
+	$log_writer = new OsmMetaEmitter\Log\FileWriter;
 } else {
-	$logger = new OsmMetaEmitter\Log\DisabledWriter;
+	$log_writer = new OsmMetaEmitter\Log\DisabledWriter;
 }
-$disabled_logger = new OsmMetaEmitter\Log\DisabledWriter;
 
-if ($settings["log_incoming_http_requests"]) {
-	log_incoming_http_request($logger);
-}
+log_incoming_http_request(
+	new OsmMetaEmitter\Http\Logger($log_writer, $settings["log_incoming_requests"])
+);
 
 if (php_sapi_name() == "cli-server") {
 	$root = "/";
@@ -40,10 +39,13 @@ if (substr($_SERVER['REQUEST_URI'], 0, strlen($root)) == $root) {
 	$request = substr($_SERVER['REQUEST_URI'], strlen($root));
 }
 
-$client = new OsmMetaEmitter\Http\Client($settings["log_outgoing_http_requests"] ? $logger : $disabled_logger);
-
 if ($settings["osm_loader"] == "api") {
-	$loader = new OsmMetaEmitter\Osm\ApiLoader($client, $settings["osm_api_url"]);
+	$loader = new OsmMetaEmitter\Osm\ApiLoader(
+		new OsmMetaEmitter\Http\Client(
+			new OsmMetaEmitter\Http\Logger($log_writer, $settings["log_outgoing_api_requests"])
+		),
+		$settings["osm_api_url"]
+	);
 } elseif ($settings["osm_loader"] == "db") {
 	$loader = new OsmMetaEmitter\Osm\DbLoader($settings["db_dsn"], $settings["db_user"], $settings["db_password"]);
 } else {
@@ -68,7 +70,12 @@ if (is_numeric($settings["max_zoom"])) {
 }
 
 $etag_handler = new OsmMetaEmitter\Http\EtagHandler($settings["client_cache"], $settings["client_cache_max_age"], $settings["settings_epoch_seconds"]);
-$tile_loader = new OsmMetaEmitter\Tile\Loader($client, $settings["osm_tile_url"]);
+$tile_loader = new OsmMetaEmitter\Tile\Loader(
+	new OsmMetaEmitter\Http\Client(
+		new OsmMetaEmitter\Http\Logger($log_writer, $settings["log_outgoing_tile_requests"])
+	),
+	$settings["osm_tile_url"]
+);
 $image_writer = new OsmMetaEmitter\Image\Writer(
 	$etag_handler, $tile_loader,
 	$image_size, $max_zoom_algorithm, $canvas_factory, $settings["image_crosshair"]
@@ -86,7 +93,7 @@ if ($settings["element_pages"]) {
 $router = new OsmMetaEmitter\Router($loader, $image_writer, $web_page_writer, $settings["site_logo"]);
 $router->route($request);
 
-function log_incoming_http_request(OsmMetaEmitter\Log\Writer $logger) {
+function log_incoming_http_request(OsmMetaEmitter\Http\Logger $logger) {
 	$items = ["$_SERVER[REQUEST_METHOD] $_SERVER[REQUEST_URI] $_SERVER[SERVER_PROTOCOL]"];
 	foreach ($_SERVER as $key => $value) {
 		if (!preg_match("/^HTTP_(.*)$/", $key, $match)) continue;

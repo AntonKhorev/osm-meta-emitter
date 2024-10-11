@@ -2,7 +2,7 @@
 
 class Client {
 	function __construct(
-		private \OsmMetaEmitter\Log\Writer $logger
+		private Logger $logger
 	) {}
 
 	function fetch(string $url, int $timeout = 60): ?string {
